@@ -79,7 +79,8 @@ Public Module ToolsModule
             End If
 
             ' Configure and run ZonalStatistic tool
-            Dim srcField As String = BA_FIELD_ID 'set the default value
+            'Dim srcField As String = BA_FIELD_ID 'set the default value
+            Dim srcField As String = Nothing    'Should be using grid code instead of id
             If layerIsRaster Then
                 tool.in_zone_data = zoneLayerFilePath
                 tool.zone_field = BA_FIELD_VALUE
@@ -1324,6 +1325,30 @@ Public Module ToolsModule
         Dim tool As BuildRasterAttributeTable = New BuildRasterAttributeTable
         tool.in_raster = inRaster
         tool.overwrite = overwrite
+        'No snapRasterPath because not a spatial analyst tool
+        If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
+    Public Function BA_MultipartToSinglepart(ByVal inFeatures As String, ByVal outFeatureClass As String) As BA_ReturnCode
+        Dim tool As MultipartToSinglepart = New MultipartToSinglepart()
+        tool.in_features = inFeatures
+        tool.out_feature_class = outFeatureClass
+        'No snapRasterPath because not a spatial analyst tool
+        If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
+    Public Function BA_Copy(ByVal inData As String, ByVal outData As String) As BA_ReturnCode
+        Dim tool As Copy = New Copy
+        tool.in_data = inData
+        tool.out_data = outData
         'No snapRasterPath because not a spatial analyst tool
         If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
             Return BA_ReturnCode.Success

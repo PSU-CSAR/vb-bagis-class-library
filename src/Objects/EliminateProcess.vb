@@ -5,23 +5,27 @@ Public Class EliminateProcess
 
     'Which method will be used for eliminating features
     Dim m_selectionMethod As String
-    'We are selecting by polygon area
-    Dim m_selectByPolyArea As Boolean
+    'We are selecting by hru area
+    Dim m_selectByHruArea As Boolean
     Dim m_polyArea As Double
     Dim m_polyAreaUnits As MeasurementUnit
     'We are selecting by percentile
     Dim m_selectByPercentile As Boolean
     Dim m_areaPercent As Double
     Dim m_polygonsEliminated As Long
+    'We are selecting by poly area
+    Dim m_selectByPolyArea As Boolean
 
-    ' Constructor for selecting by area
-    Sub New(ByVal selectionMethod As String, ByVal selectByPolyArea As Boolean, ByVal polyArea As Double, _
-            ByVal polyAreaUnits As MeasurementUnit, ByVal polygonsEliminated As Long)
+
+    ' Constructor for selecting by hru or poly area
+    Sub New(ByVal selectionMethod As String, ByVal selectByHruArea As Boolean, ByVal polyArea As Double, _
+            ByVal polyAreaUnits As MeasurementUnit, ByVal polygonsEliminated As Long, ByVal selectByPolyArea As Boolean)
         m_selectionMethod = selectionMethod
-        m_selectByPolyArea = selectByPolyArea
+        m_selectByHruArea = selectByHruArea
         m_polyArea = polyArea
         m_polyAreaUnits = polyAreaUnits
         m_polygonsEliminated = polygonsEliminated
+        m_selectByPolyArea = selectByPolyArea
     End Sub
 
     ' Constructor for selecting by percentile
@@ -49,12 +53,12 @@ Public Class EliminateProcess
         End Set
     End Property
 
-    Property SelectByPolyArea() As Boolean
+    Property SelectByHruArea() As Boolean
         Get
-            Return m_selectByPolyArea
+            Return m_selectByHruArea
         End Get
         Set(ByVal value As Boolean)
-            m_selectByPolyArea = value
+            m_selectByHruArea = value
         End Set
     End Property
 
@@ -125,6 +129,15 @@ Public Class EliminateProcess
                     Return 0
             End Select
         End Get
+    End Property
+
+    Property SelectByPolyArea() As Boolean
+        Get
+            Return m_selectByPolyArea
+        End Get
+        Set(ByVal value As Boolean)
+            m_selectByPolyArea = value
+        End Set
     End Property
 
 End Class
