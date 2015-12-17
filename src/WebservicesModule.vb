@@ -252,7 +252,7 @@ Public Module WebservicesModule
 
     End Function
 
-    Public Function BA_QueryFeatureServiceFieldNames(ByVal webserviceUrl As String) As IList(Of String)
+    Public Function BA_QueryFeatureServiceFieldNames(ByVal webserviceUrl As String, ByVal fieldType As esriFieldType) As IList(Of String)
         Dim sb As StringBuilder = New StringBuilder()
         'read the JSON request
         Dim req As System.Net.WebRequest = System.Net.WebRequest.Create(webserviceUrl & "?f=pjson")
@@ -263,8 +263,7 @@ Public Module WebservicesModule
         fs = CType(ser.ReadObject(resp.GetResponseStream), FeatureService)
         Dim fieldList As List(Of String) = New List(Of String)
         For Each fsf As FeatureServiceField In fs.fields
-            If fsf.fieldType = esriFieldType.esriFieldTypeString Or _
-                fsf.fieldType = esriFieldType.esriFieldTypeInteger Then
+            If fsf.fieldType = fieldType Then
                 fieldList.Add(fsf.alias)
             End If
         Next
