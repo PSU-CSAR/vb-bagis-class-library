@@ -238,6 +238,7 @@
     <Compile Include="Objects\EliminateProcess.vb" />
     <Compile Include="Objects\FeatureService.vb" />
     <Compile Include="Objects\FeatureServiceField.vb" />
+    <Compile Include="Objects\GxFilterFeatureServers.vb" />
     <Compile Include="Objects\GxFilterXml.vb" />
     <Compile Include="Objects\Hru.vb" />
     <Compile Include="Objects\IRule.vb" />
