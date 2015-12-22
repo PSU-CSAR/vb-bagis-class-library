@@ -4,38 +4,30 @@ Public Class BA_GxFilterFeatureServers
     Implements IGxObjectFilter
 
     Public Function CanChooseObject(ByVal catObj As IGxObject, ByRef result As ESRI.ArcGIS.Catalog.esriDoubleClickResult) As Boolean Implements ESRI.ArcGIS.Catalog.IGxObjectFilter.CanChooseObject
-        Dim canChoose As Boolean = False
-        If InStr(catObj.Name, ".") <> 0 Then
-            Dim ext As String = GetFileExt(catObj.Name)
-            If ext = "FeatureServer" Then
-                canChoose = True
-            End If
-        End If
-        If ((catObj.Category = "Folder Connection")) Then
-            Return False
-        ElseIf (canChoose = True) Then
+        'Can only choose feature services
+        Dim category As String = Trim(catObj.Category)
+        If category = BA_EnumDescription(GxFilterCategory.FeatureService) Then
             Return True
+        Else
+            Return False
         End If
-        Return False
     End Function
 
     Public Function CanDisplayObject(ByVal Location As ESRI.ArcGIS.Catalog.IGxObject) As Boolean Implements ESRI.ArcGIS.Catalog.IGxObjectFilter.CanDisplayObject
-        'Always show folder connections so you can get to the feature service
-        If ((Location.Category = "Folder Connection")) Then
-            Return True
-        End If
-        Dim canDisplay As Boolean = False
-        Dim ext As String
-        If InStr(Location.Name, ".") <> 0 Then
-            ext = GetFileExt(Location.Name)
-            'Debug.Print(Location.Name)
-            If ext = "FeatureServer" Then
-                canDisplay = True
-            End If
-        Else
-            canDisplay = True
-        End If
-        Return canDisplay
+        'Always show folder connections and ArcGIS Server so you can get to the feature service
+        Dim category As String = Trim(Location.Category)
+        Select Case category
+            Case BA_EnumDescription(GxFilterCategory.FolderConnection)
+                Return True
+            Case BA_EnumDescription(GxFilterCategory.ArcGisServer)
+                Return True
+            Case BA_EnumDescription(GxFilterCategory.ArcGisServerFolder)
+                Return True
+            Case BA_EnumDescription(GxFilterCategory.FeatureService)
+                Return True
+            Case Else
+                Return False
+        End Select
     End Function
 
     Public Function CanSaveObject(Location As ESRI.ArcGIS.Catalog.IGxObject, newObjectName As String, ByRef objectAlreadyExists As Boolean) As Boolean Implements ESRI.ArcGIS.Catalog.IGxObjectFilter.CanSaveObject
@@ -54,17 +46,17 @@ Public Class BA_GxFilterFeatureServers
         End Get
     End Property
 
-    Function GetFileExt(ByVal strFileWPath As String)
+    'Function GetFileExt(ByVal strFileWPath As String)
 
-        Try
-            Return Right(strFileWPath, Len(strFileWPath) - InStrRev(strFileWPath, "."))
-        Catch ex As Exception
-            MsgBox("The following error has occured." & vbCrLf & vbCrLf & _
-                "Error Number: " & Err.Number & vbCrLf & _
-                "Error Source: GetFileExt" & vbCrLf & _
-                "Error Description: " & Err.Description, _
-                vbCritical, "An Error has Occured!")
-            Return Nothing
-        End Try
-    End Function
+    '    Try
+    '        Return Right(strFileWPath, Len(strFileWPath) - InStrRev(strFileWPath, "."))
+    '    Catch ex As Exception
+    '        MsgBox("The following error has occured." & vbCrLf & vbCrLf & _
+    '            "Error Number: " & Err.Number & vbCrLf & _
+    '            "Error Source: GetFileExt" & vbCrLf & _
+    '            "Error Description: " & Err.Description, _
+    '            vbCritical, "An Error has Occured!")
+    '        Return Nothing
+    '    End Try
+    'End Function
 End Class

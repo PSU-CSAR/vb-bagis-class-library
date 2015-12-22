@@ -34,9 +34,9 @@ Public Class GxFilterXml
     Implements IGxObjectFilter
 
     Private Function CanChooseObject(ByVal catObj As IGxObject, ByRef result As esriDoubleClickResult) As Boolean Implements IGxObjectFilter.CanChooseObject
-        If ((catObj.Category = "Folder") Or (catObj.Category = "Folder Connection")) Then
+        If ((catObj.Category = BA_EnumDescription(GxFilterCategory.Folder)) Or (catObj.Category = BA_EnumDescription(GxFilterCategory.FolderConnection))) Then
             Return False
-        ElseIf (catObj.Category = "XML Document") Then
+        ElseIf (catObj.Category = BA_EnumDescription(GxFilterCategory.XmlDocument)) Then
             Return True
         End If
         Return False
@@ -46,7 +46,7 @@ Public Class GxFilterXml
         'If TypeOf catObj Is IGxObjectContainer Or Right$(UCase$(catObj.FullName), 4) = ".XML" Then
         '    Return True
         'End If
-        If ((catObj.Category = "Folder") Or (catObj.Category = "Folder Connection") Or (catObj.Category = "XML Document")) Then
+        If ((catObj.Category = BA_EnumDescription(GxFilterCategory.Folder)) Or (catObj.Category = BA_EnumDescription(GxFilterCategory.FolderConnection)) Or (catObj.Category = BA_EnumDescription(GxFilterCategory.XmlDocument))) Then
             Return True
         End If
         Return False
