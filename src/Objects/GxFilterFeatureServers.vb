@@ -45,18 +45,4 @@ Public Class BA_GxFilterFeatureServers
             Return "FeatureServer"
         End Get
     End Property
-
-    'Function GetFileExt(ByVal strFileWPath As String)
-
-    '    Try
-    '        Return Right(strFileWPath, Len(strFileWPath) - InStrRev(strFileWPath, "."))
-    '    Catch ex As Exception
-    '        MsgBox("The following error has occured." & vbCrLf & vbCrLf & _
-    '            "Error Number: " & Err.Number & vbCrLf & _
-    '            "Error Source: GetFileExt" & vbCrLf & _
-    '            "Error Description: " & Err.Description, _
-    '            vbCritical, "An Error has Occured!")
-    '        Return Nothing
-    '    End Try
-    'End Function
 End Class

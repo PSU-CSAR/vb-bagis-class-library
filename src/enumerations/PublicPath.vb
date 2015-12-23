@@ -62,4 +62,5 @@ Public Enum PublicPath
     <Description("\BAGIS_Parameters.csv")> DefaultParameterTemplate
     <Description("\map_parameters.txt")> MapParameters
     <Description("\task_log.xml")> EBagisTaskLog
+    <Description("/FeatureServer/0")> FeatureServiceUrl
 End Enum
