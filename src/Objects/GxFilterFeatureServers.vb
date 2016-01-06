@@ -1,6 +1,6 @@
 ﻿Imports ESRI.ArcGIS.Catalog
 
-Public Class BA_GxFilterFeatureServers
+Public Class GxFilterFeatureServers
     Implements IGxObjectFilter
 
     Public Function CanChooseObject(ByVal catObj As IGxObject, ByRef result As ESRI.ArcGIS.Catalog.esriDoubleClickResult) As Boolean Implements ESRI.ArcGIS.Catalog.IGxObjectFilter.CanChooseObject
