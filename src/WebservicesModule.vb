@@ -252,6 +252,35 @@ Public Module WebservicesModule
 
     End Function
 
+    'Note that an image service can't be clipped directly to a vector. This function converts a vector to a raster
+    'before calling another clip function and deletes the temporary raster when the clip completes
+    Public Function BA_ClipImageServiceToVector(ByVal clipFilePath As String, ByVal clipField As String, ByVal webServiceUrl As String, _
+                                                ByVal newFilePath As String, ByVal snapRasterPath As String) As BA_ReturnCode
+        Dim tempRaster As String = "ClipRas"
+        Dim parentPath As String = "PleaseReturn"
+
+        Try
+            Dim cellSize As Double = BA_CellSizeImageService(webServiceUrl)
+            Dim clipFeatures As String = BA_GetBareName(clipFilePath, parentPath)
+            Dim outRasterPath As String = parentPath & tempRaster
+            Dim success As BA_ReturnCode = BA_Feature2RasterGP(clipFilePath, outRasterPath, clipField, cellSize, snapRasterPath)
+            If success = BA_ReturnCode.Success Then
+                BA_ClipImageService(outRasterPath, webServiceUrl, newFilePath)
+            End If
+            Return success
+        Catch ex As Exception
+            Debug.Print("BA_ClipImageServiceToVector Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            Dim wType = BA_GetWorkspaceTypeFromPath(parentPath)
+            If wType = WorkspaceType.Geodatabase Then
+                BA_RemoveRasterFromGDB(parentPath, tempRaster)
+            Else
+                BA_Remove_Raster(parentPath, tempRaster)
+            End If
+        End Try
+    End Function
+
     Public Function BA_QueryFeatureServiceFieldNames(ByVal webserviceUrl As String, ByVal fieldType As esriFieldType) As IList(Of String)
         Dim sb As StringBuilder = New StringBuilder()
         'read the JSON request
@@ -543,6 +572,29 @@ Public Module WebservicesModule
         Catch ex As Exception
             ' An exception was thrown while trying to open the dataset, return false
             Return False
+        End Try
+    End Function
+
+    ' Calculate raster cellsize from an input GeoDataset
+    Public Function BA_CellSizeImageService(ByVal url As String) As Double
+        Dim isLayer As IImageServerLayer = New ImageServerLayerClass
+        Dim imageRaster As IRaster = Nothing
+        Dim imageRasterProps As IRasterProps = Nothing
+        Try
+            'Create an image server layer by passing a URL.
+            isLayer.Initialize(url)
+            'Get the raster from the image server layer.
+            imageRaster = isLayer.Raster
+            imageRasterProps = DirectCast(imageRaster, IRasterProps)
+            Dim pPnt As IPnt = imageRasterProps.MeanCellSize
+            Return (pPnt.X + pPnt.Y) / 2
+        Catch ex As Exception
+            MsgBox("BA_CellSizeImageService: " & ex.Message)
+            Return 0
+        Finally
+            isLayer = Nothing
+            imageRaster = Nothing
+            imageRasterProps = Nothing
         End Try
     End Function
 End Module
