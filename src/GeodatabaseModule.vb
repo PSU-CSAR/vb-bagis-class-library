@@ -155,6 +155,8 @@ Public Module GeodatabaseModule
             Finally
                 ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pWS)
             End Try
+        ElseIf wksType = WorkspaceType.ImageServer Then
+            Return BA_File_ExistsImageServer(fullPath)
         End If
         Return False
     End Function
@@ -601,6 +603,13 @@ Public Module GeodatabaseModule
     Public Function BA_GetWorkspaceTypeFromPath(ByVal inputPath As String) As WorkspaceType
         If inputPath.IndexOf(".gdb") > -1 Then
             Return WorkspaceType.Geodatabase
+        ElseIf inputPath.IndexOf("http") = 0 Then
+            'We have a web service
+            If inputPath.IndexOf(BA_Url_FeatureServer) > -1 Then
+                Return WorkspaceType.FeatureServer
+            Else
+                Return WorkspaceType.ImageServer
+            End If
         Else
             Return WorkspaceType.Raster
         End If

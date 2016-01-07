@@ -201,7 +201,13 @@
     Public Const BA_Download_Download_Started As String = "Started"
     Public Const BA_Download_Complete As String = "Complete"
 
-
+    'BAGIS V3 constants
+    'Connection property of ArcGIS server containing the rest url
+    Public Const BA_Property_RestUrl As String = "RestUrl"
+    Public Const BA_Url_Services As String = "/services"
+    Public Const BA_Url_MapServer As String = "MapServer"
+    Public Const BA_Url_ImageServer As String = "ImageServer"
+    Public Const BA_Url_FeatureServer As String = "FeatureServer"
 End Module
 
 

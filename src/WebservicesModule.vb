@@ -532,4 +532,17 @@ Public Module WebservicesModule
         Next
         Return False
     End Function
+
+    Public Function BA_File_ExistsImageServer(ByVal imageUrl As String) As Boolean
+        Dim isLayer As IImageServerLayer = New ImageServerLayerClass
+        Dim imageRaster As IRaster = Nothing
+        Try
+            isLayer.Initialize(imageUrl)
+            imageRaster = isLayer.Raster
+            Return True
+        Catch ex As Exception
+            ' An exception was thrown while trying to open the dataset, return false
+            Return False
+        End Try
+    End Function
 End Module
