@@ -21,6 +21,8 @@ Public Module WebservicesModule
         Dim sb As StringBuilder = New StringBuilder()
         'url base for query
         sb.Append(webServiceUrl)
+        'append trailing backslash to url if it is missing
+        If Right(webServiceUrl, 1) <> "/" Then sb.Append("/")
         'append the query; where clause is required; This one returns all records
         Dim whereClause As String = "query?&where={0}"
         sb.Append(String.Format(whereClause, HttpUtility.UrlEncode(String.Format("OBJECTID>{0}", 0))))
@@ -39,7 +41,6 @@ Public Module WebservicesModule
         Dim query As String = sb.ToString
         'read the JSON request
         Dim jsonFeatures As String = GetResult(query)
-
         Dim jsonReader As IJSONReader = New JSONReader
         Dim JSONConverterGdb As IJSONConverterGdb = New JSONConverterGdb()
         Dim originalToNewFieldMap As IPropertySet = Nothing
@@ -53,6 +54,7 @@ Public Module WebservicesModule
         Try
             jsonReader.ReadFromString(jsonFeatures)
             JSONConverterGdb.ReadRecordSet(jsonReader, Nothing, Nothing, recordSet, originalToNewFieldMap)
+
             Dim outputFolder As String = "PleaseReturn"
             Dim outputFile As String = BA_GetBareName(newFilePath, outputFolder)
             ' Strip trailing "\" if exists
@@ -596,5 +598,23 @@ Public Module WebservicesModule
             imageRaster = Nothing
             imageRasterProps = Nothing
         End Try
+    End Function
+
+    Public Function BA_FeatureServiceSpatialReference(ByVal url As String) As ISpatialReference
+        Dim sb As StringBuilder = New StringBuilder()
+        Dim spRef As ISpatialReference = Nothing
+        'read the JSON request
+        Dim req As System.Net.WebRequest = System.Net.WebRequest.Create(url & "?f=pjson")
+        Dim resp As System.Net.WebResponse = req.GetResponse()
+
+        Dim fs As FeatureService = New FeatureService()
+        Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(fs.[GetType]())
+        fs = CType(ser.ReadObject(resp.GetResponseStream), FeatureService)
+
+        If fs.extent.spatialReference IsNot Nothing Then
+            Dim factory As ISpatialReferenceFactory3 = New SpatialReferenceEnvironment()
+            spRef = factory.CreateSpatialReference(fs.extent.spatialReference.wkid)
+        End If
+        Return spRef
     End Function
 End Module
