@@ -617,4 +617,43 @@ Public Module WebservicesModule
         End If
         Return spRef
     End Function
+
+    Public Function BA_File_ExistsFeatureServer(ByVal url As String) As Boolean
+        Dim sb As StringBuilder = New StringBuilder()
+        Try
+
+            'read the JSON request
+            Dim req As System.Net.WebRequest = System.Net.WebRequest.Create(url & "?f=pjson")
+            Dim resp As System.Net.WebResponse = req.GetResponse()
+
+            Dim fs As FeatureService = New FeatureService()
+            Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(fs.[GetType]())
+            fs = CType(ser.ReadObject(resp.GetResponseStream), FeatureService)
+            If fs IsNot Nothing Then
+                If Not String.IsNullOrEmpty(fs.name) Then
+                    Return True
+                End If
+            End If
+            Return False
+        Catch ex As Exception
+            'We encountered an exception; Feature service doesn't exist
+            Return False
+        End Try
+    End Function
+
+    Public Function BA_QueryAllFeatureServiceFieldNames(ByVal webserviceUrl As String) As IList(Of FeatureServiceField)
+        Dim sb As StringBuilder = New StringBuilder()
+        Dim fieldList As List(Of FeatureServiceField) = New List(Of FeatureServiceField)
+        'read the JSON request
+        Dim req As System.Net.WebRequest = System.Net.WebRequest.Create(webserviceUrl & "?f=pjson")
+        Dim resp As System.Net.WebResponse = req.GetResponse()
+
+        Dim fs As FeatureService = New FeatureService()
+        Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(fs.[GetType]())
+        fs = CType(ser.ReadObject(resp.GetResponseStream), FeatureService)
+        For Each fsf As FeatureServiceField In fs.fields
+            fieldList.Add(fsf)
+        Next
+        Return fieldList
+    End Function
 End Module

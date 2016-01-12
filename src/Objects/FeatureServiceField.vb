@@ -46,6 +46,10 @@
                     Return ESRI.ArcGIS.Geodatabase.esriFieldType.esriFieldTypeSmallInteger
                 Case "esriFieldTypeDouble"
                     Return ESRI.ArcGIS.Geodatabase.esriFieldType.esriFieldTypeDouble
+                Case "esriFieldTypeInteger"
+                    Return ESRI.ArcGIS.Geodatabase.esriFieldType.esriFieldTypeInteger
+                Case "esriFieldTypeSingle"
+                    Return ESRI.ArcGIS.Geodatabase.esriFieldType.esriFieldTypeSingle
                 Case Else
                     'Default; Should never get here
                     Return ESRI.ArcGIS.Geodatabase.esriFieldType.esriFieldTypeString

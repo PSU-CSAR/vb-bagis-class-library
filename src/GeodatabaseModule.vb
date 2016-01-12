@@ -157,6 +157,8 @@ Public Module GeodatabaseModule
             End Try
         ElseIf wksType = WorkspaceType.ImageServer Then
             Return BA_File_ExistsImageServer(fullPath)
+        ElseIf wksType = WorkspaceType.FeatureServer Then
+            Return BA_File_ExistsFeatureServer(fullPath)
         End If
         Return False
     End Function
