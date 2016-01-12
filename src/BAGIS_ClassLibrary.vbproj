@@ -235,6 +235,7 @@
     <Compile Include="Objects\AoiTask.vb" />
     <Compile Include="Objects\ContributingAreasRule.vb" />
     <Compile Include="Objects\CookieCutProcess.vb" />
+    <Compile Include="Objects\JsonQueryResult.vb" />
     <Compile Include="Objects\DAFlowTypeZonesRule.vb" />
     <Compile Include="Objects\EliminateProcess.vb" />
     <Compile Include="Objects\FeatureService.vb" />

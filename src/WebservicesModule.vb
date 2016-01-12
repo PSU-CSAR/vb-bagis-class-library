@@ -41,72 +41,82 @@ Public Module WebservicesModule
         Dim query As String = sb.ToString
         'read the JSON request
         Dim jsonFeatures As String = GetResult(query)
-        Dim jsonReader As IJSONReader = New JSONReader
-        Dim JSONConverterGdb As IJSONConverterGdb = New JSONConverterGdb()
-        Dim originalToNewFieldMap As IPropertySet = Nothing
-        Dim recordSet As IRecordSet = Nothing
-        Dim recordSet2 As IRecordSet2 = Nothing
-        Dim workspaceFactory As IWorkspaceFactory = New FileGDBWorkspaceFactory
-        Dim workspace As IFeatureWorkspace = Nothing
-        Dim searchWS As IWorkspace2 = Nothing
-        Dim deleteFClass As IFeatureClass = Nothing
-        Dim deleteDataset As IDataset = Nothing
-        Try
-            jsonReader.ReadFromString(jsonFeatures)
-            JSONConverterGdb.ReadRecordSet(jsonReader, Nothing, Nothing, recordSet, originalToNewFieldMap)
+        Dim byteArray As Byte() = System.Text.Encoding.UTF8.GetBytes(jsonFeatures)
+        Dim jsonStream As System.IO.MemoryStream = New System.IO.MemoryStream(byteArray)
+        'Check to make sure we got some features, if not IJSONConverterGdb throws an exception
+        Dim jsonResult As JsonQueryResult = New JsonQueryResult()
+        Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(jsonResult.[GetType]())
+        jsonResult = CType(ser.ReadObject(jsonStream), JsonQueryResult)
 
-            Dim outputFolder As String = "PleaseReturn"
-            Dim outputFile As String = BA_GetBareName(newFilePath, outputFolder)
-            ' Strip trailing "\" if exists
-            If outputFolder(Len(outputFolder) - 1) = "\" Then
-                outputFolder = outputFolder.Remove(Len(outputFolder) - 1, 1)
-            End If
+        If jsonResult IsNot Nothing AndAlso jsonResult.features.Count > 0 Then
+            Dim jsonReader As IJSONReader = New JSONReader
+            Dim JSONConverterGdb As IJSONConverterGdb = New JSONConverterGdb()
+            Dim originalToNewFieldMap As IPropertySet = Nothing
+            Dim recordSet As IRecordSet = Nothing
+            Dim recordSet2 As IRecordSet2 = Nothing
+            Dim workspaceFactory As IWorkspaceFactory = New FileGDBWorkspaceFactory
+            Dim workspace As IFeatureWorkspace = Nothing
+            Dim searchWS As IWorkspace2 = Nothing
+            Dim deleteFClass As IFeatureClass = Nothing
+            Dim deleteDataset As IDataset = Nothing
+            Try
+                jsonReader.ReadFromString(jsonFeatures)
+                JSONConverterGdb.ReadRecordSet(jsonReader, Nothing, Nothing, recordSet, originalToNewFieldMap)
 
-            Dim tempFile As String = "webQuery"
-            workspace = workspaceFactory.OpenFromFile(outputFolder, 0)
-            searchWS = CType(workspace, IWorkspace2)
-            recordSet2 = CType(recordSet, IRecordSet2)
+                Dim outputFolder As String = "PleaseReturn"
+                Dim outputFile As String = BA_GetBareName(newFilePath, outputFolder)
+                ' Strip trailing "\" if exists
+                If outputFolder(Len(outputFolder) - 1) = "\" Then
+                    outputFolder = outputFolder.Remove(Len(outputFolder) - 1, 1)
+                End If
 
-            'Delete temp file if it exists
-            If searchWS.NameExists(esriDatasetType.esriDTFeatureClass, tempFile) Then
-                deleteFClass = workspace.OpenFeatureClass(tempFile)
-                deleteDataset = CType(deleteFClass, IDataset)
-                deleteDataset.Delete()
-            End If
-
-            'Delete output file if it exists
-            If searchWS.NameExists(esriDatasetType.esriDTFeatureClass, outputFile) Then
-                deleteFClass = workspace.OpenFeatureClass(outputFile)
-                deleteDataset = CType(deleteFClass, IDataset)
-                deleteDataset.Delete()
-            End If
-
-            'Save query results to temp file in target geodatabase
-            recordSet2.SaveAsTable(workspace, tempFile)
-            'Clip queried layer to aoi
-            Dim retVal As Short = BA_ClipAOIVector(aoiFolder, outputFolder & "\" & tempFile, outputFile, outputFolder, True)
-            If retVal = 1 Then
-                'Delete temporary query file
-                'Re-initialize workspace to resolve separated RCW error
+                Dim tempFile As String = "webQuery"
                 workspace = workspaceFactory.OpenFromFile(outputFolder, 0)
-                deleteFClass = workspace.OpenFeatureClass(tempFile)
-                deleteDataset = CType(deleteFClass, IDataset)
-                deleteDataset.Delete()
-                Return BA_ReturnCode.Success
-            End If
-            Return BA_ReturnCode.UnknownError
-        Catch ex As Exception
-            Debug.Print("BA_ClipFeatureService Exception: " & ex.Message)
-            Return BA_ReturnCode.UnknownError
-        Finally
-            recordSet = Nothing
-            recordSet2 = Nothing
-            workspace = Nothing
-            searchWS = Nothing
-            deleteFClass = Nothing
-            deleteDataset = Nothing
-        End Try
+                searchWS = CType(workspace, IWorkspace2)
+                recordSet2 = CType(recordSet, IRecordSet2)
 
+                'Delete temp file if it exists
+                If searchWS.NameExists(esriDatasetType.esriDTFeatureClass, tempFile) Then
+                    deleteFClass = workspace.OpenFeatureClass(tempFile)
+                    deleteDataset = CType(deleteFClass, IDataset)
+                    deleteDataset.Delete()
+                End If
+
+                'Delete output file if it exists
+                If searchWS.NameExists(esriDatasetType.esriDTFeatureClass, outputFile) Then
+                    deleteFClass = workspace.OpenFeatureClass(outputFile)
+                    deleteDataset = CType(deleteFClass, IDataset)
+                    deleteDataset.Delete()
+                End If
+
+                'Save query results to temp file in target geodatabase
+                recordSet2.SaveAsTable(workspace, tempFile)
+                'Clip queried layer to aoi
+                Dim retVal As Short = BA_ClipAOIVector(aoiFolder, outputFolder & "\" & tempFile, outputFile, outputFolder, True)
+                If retVal = 1 Then
+                    'Delete temporary query file
+                    'Re-initialize workspace to resolve separated RCW error
+                    workspace = workspaceFactory.OpenFromFile(outputFolder, 0)
+                    deleteFClass = workspace.OpenFeatureClass(tempFile)
+                    deleteDataset = CType(deleteFClass, IDataset)
+                    deleteDataset.Delete()
+                    Return BA_ReturnCode.Success
+                End If
+                Return BA_ReturnCode.UnknownError
+            Catch ex As Exception
+                Debug.Print("BA_ClipFeatureService Exception: " & ex.Message)
+                Return BA_ReturnCode.UnknownError
+            Finally
+                recordSet = Nothing
+                recordSet2 = Nothing
+                workspace = Nothing
+                searchWS = Nothing
+                deleteFClass = Nothing
+                deleteDataset = Nothing
+            End Try
+        Else
+            Return BA_ReturnCode.ReadError
+        End If
     End Function
 
     Private Function GetJSONEnvelope(ByVal clipFilePath As String) As String
