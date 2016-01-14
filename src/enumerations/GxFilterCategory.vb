@@ -10,4 +10,5 @@ Public Enum GxFilterCategory
     <Description("Feature Service")> FeatureService
     <Description("ArcGIS Server")> ArcGisServer
     <Description("ArcGIS Server Folder")> ArcGisServerFolder
+    <Description("Image Service")> ImageService
 End Enum
