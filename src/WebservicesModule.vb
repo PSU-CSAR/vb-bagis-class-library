@@ -266,30 +266,68 @@ Public Module WebservicesModule
 
     'Note that an image service can't be clipped directly to a vector. This function converts a vector to a raster
     'before calling another clip function and deletes the temporary raster when the clip completes
-    Public Function BA_ClipImageServiceToVector(ByVal clipFilePath As String, ByVal clipField As String, ByVal webServiceUrl As String, _
-                                                ByVal newFilePath As String, ByVal snapRasterPath As String) As BA_ReturnCode
-        Dim tempRaster As String = "ClipRas"
-        Dim parentPath As String = "PleaseReturn"
+    Public Function BA_ClipImageServiceToVector(ByVal clipFilePath As String, ByVal webServiceUrl As String, _
+                                                ByVal newFilePath As String) As BA_ReturnCode
+        Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(newFilePath)
+        If wType = WorkspaceType.Raster Then
+            Debug.Print("BA_ClipImageServiceToVector can only write to FileGeodatabase format. Please supply an output path " _
+                        & "to a FileGeodatabase folder.")
+            Return BA_ReturnCode.WriteError
+        End If
 
+        Dim isLayer As IImageServerLayer = New ImageServerLayerClass
+        Dim imageRaster As IRaster = Nothing
+        Dim imageRasterProps As IRasterProps = Nothing
+        Dim extent As IEnvelope = Nothing
         Try
+            'Create an image server layer by passing a URL.
+            Dim URL As String = webServiceUrl
+            isLayer.Initialize(URL)
+            'Get the raster from the image server layer.
+            imageRaster = isLayer.Raster
+
+            'The raster from an image server is normally large; Define the size of the raster.
+            imageRasterProps = DirectCast(imageRaster, IRasterProps)
+
+            Dim xCols As Long = -1
+            Dim yRows As Long = -1
             Dim cellSize As Double = BA_CellSizeImageService(webServiceUrl)
-            Dim clipFeatures As String = BA_GetBareName(clipFilePath, parentPath)
-            Dim outRasterPath As String = parentPath & tempRaster
-            Dim success As BA_ReturnCode = BA_Feature2RasterGP(clipFilePath, outRasterPath, clipField, cellSize, snapRasterPath)
-            If success = BA_ReturnCode.Success Then
-                BA_ClipImageService(outRasterPath, webServiceUrl, newFilePath)
+            BA_GetColumnRowCountFromVector(clipFilePath, cellSize, cellSize, extent, xCols, yRows)
+
+            '@ToDo: May need to worry about the projection in real-life
+            imageRasterProps.Extent = extent
+            imageRasterProps.Width = xCols
+            imageRasterProps.Height = yRows
+
+            'Save the clipped raster to the file geodatabase.
+            Dim newFolder As String = "PleaseReturn"
+            Dim newFile As String = BA_GetBareName(newFilePath, newFolder)
+            ' Strip trailing "\" if exists
+            If newFolder(Len(newFolder) - 1) = "\" Then
+                newFolder = newFolder.Remove(Len(newFolder) - 1, 1)
             End If
-            Return success
+
+            'Remove the target raster if it exists
+            Dim retVal As Short = 1
+            If BA_File_Exists(newFilePath, WorkspaceType.Geodatabase, esriDatasetType.esriDTRasterDataset) Then
+                retVal = BA_RemoveRasterFromGDB(newFolder, newFile)
+            End If
+            If retVal = 1 Then
+                retVal = BA_SaveRasterDatasetGDB(imageRaster, newFolder, BA_RASTER_FORMAT, newFile)
+            End If
+
+            If retVal = 1 Then
+                Return BA_ReturnCode.Success
+            Else
+                Return BA_ReturnCode.UnknownError
+            End If
         Catch ex As Exception
             Debug.Print("BA_ClipImageServiceToVector Exception: " & ex.Message)
             Return BA_ReturnCode.UnknownError
         Finally
-            Dim wType = BA_GetWorkspaceTypeFromPath(parentPath)
-            If wType = WorkspaceType.Geodatabase Then
-                BA_RemoveRasterFromGDB(parentPath, tempRaster)
-            Else
-                BA_Remove_Raster(parentPath, tempRaster)
-            End If
+            imageRaster = Nothing
+            imageRasterProps = Nothing
+            extent = Nothing
         End Try
     End Function
 
