@@ -2035,4 +2035,12 @@ Public Module AOIModule
         End If
     End Function
 
+    Public Function BA_ClipAOIImageServer(ByVal AoiFolder As String, ByVal strDEMDataSet As String, ByVal newFilePath As String, ByVal clipFile As AOIClipFile) As Integer
+        Dim clipFilePath As String = BA_GeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, True) & BA_EnumDescription(AOIClipFile.AOIExtentCoverage)
+        Dim response As Integer = -1
+        Dim success As BA_ReturnCode = BA_ClipImageServiceToVector(clipFilePath, strDEMDataSet, newFilePath)
+        If success = BA_ReturnCode.Success Then response = 1
+        Return response
+    End Function
+
 End Module

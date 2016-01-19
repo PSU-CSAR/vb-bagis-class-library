@@ -1725,4 +1725,77 @@ Public Module GeodatabaseModule
 
     End Function
 
+    Public Sub BA_ShapeFile2RasterGDB(ByVal featClass As IFeatureClass, ByVal gdbPath As String, _
+                               ByVal FileName As String, ByVal Cellsize As Object, _
+                               ByVal valueField As String, ByVal snapRasterPath As String)
+        Dim pWS As IWorkspace = Nothing
+        Dim pWSFactory As IWorkspaceFactory = New RasterWorkspaceFactory
+        Dim pConversionOp As IConversionOp = New RasterConversionOp
+        Dim pEnv As IRasterAnalysisEnvironment = Nothing
+        Dim pRDS As IRasterDataset = Nothing
+        Dim snapRaster As IRasterDataset = Nothing
+        Dim envelope As IEnvelope = Nothing
+        Dim pFDesc As IFeatureClassDescriptor = New FeatureClassDescriptor
+        pFDesc.Create(featClass, Nothing, valueField)
+        Dim pGeoDataset As IGeoDataset = CType(featClass, IGeoDataset)
+        Dim imageLayer As IImageServerLayer = New ImageServerLayerClass
+        Dim imageRaster As IRaster = Nothing
+        Dim snapLayer As IRasterLayer = New RasterLayer()
+
+        Try
+            'Commenting out check for integer values since we may also convert text values; Field values should be checked
+            'before this is called from either BA_Feature2RasterInteger or BA_Feature2RasterDouble
+            'If BA_IsIntegerField(featClassDescr, valueField) Then
+            Dim hruPath As String = ""
+            Dim tmpName As String = BA_GetBareName(gdbPath, hruPath)
+            pWS = pWSFactory.OpenFromFile(hruPath, 0)
+            pEnv = CType(pConversionOp, IRasterAnalysisEnvironment)
+            pEnv.SetCellSize(esriRasterEnvSettingEnum.esriRasterEnvValue, Cellsize)
+            envelope = pGeoDataset.Extent
+            Dim object_Envelope As System.Object = CType(envelope, System.Object) ' Explicit Cast
+            If Not String.IsNullOrEmpty(snapRasterPath) Then
+                Dim snapPath As String = "PleaseReturn"
+                Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(snapRasterPath)
+                If workspaceType = workspaceType.Geodatabase Then
+                    Dim snapName As String = BA_GetBareName(snapRasterPath, snapPath)
+                    snapRaster = BA_OpenRasterFromGDB(snapPath, snapName)
+                    pEnv.SetExtent(esriRasterEnvSettingEnum.esriRasterEnvValue, object_Envelope, snapRaster)
+                ElseIf workspaceType = workspaceType.Raster Then 'input is a GRID
+                    Dim snapName As String = BA_GetBareName(snapRasterPath, snapPath)
+                    snapRaster = BA_OpenRasterFromFile(snapPath, snapName)
+                    pEnv.SetExtent(esriRasterEnvSettingEnum.esriRasterEnvValue, object_Envelope, snapRaster)
+                ElseIf workspaceType = BAGIS_ClassLibrary.WorkspaceType.ImageServer Then
+                    'Create an image server layer by passing a URL.
+                    imageLayer.Initialize(snapRasterPath)
+                    'Get the raster from the image server layer.
+                    imageRaster = imageLayer.Raster
+                    snapLayer.CreateFromRaster(imageRaster)
+                    pEnv.SetExtent(esriRasterEnvSettingEnum.esriRasterEnvValue, object_Envelope, snapLayer)
+                End If
+            End If
+            pRDS = pConversionOp.ToRasterDataset(pFDesc, "GRID", pWS, FileName)
+            Dim success As Integer = BA_SaveRasterDatasetGDB(pRDS, gdbPath, BA_RASTER_FORMAT, FileName)
+            If success = 1 Then
+                BA_Remove_Raster(hruPath, FileName)
+            End If
+            'Else
+            'Throw New Exception("Invalid values found in value field. Values must be whole numbers.")
+            'End If
+        Catch ex As Exception
+            MessageBox.Show("BA_ShapeFile2RasterGDB Exception: " + ex.Message)
+        Finally
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pWS)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pFDesc)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pConversionOp)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(snapRaster)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(envelope)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pEnv)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pRDS)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pGeoDataset)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(imageLayer)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(imageRaster)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(snapLayer)
+        End Try
+    End Sub
+
 End Module
