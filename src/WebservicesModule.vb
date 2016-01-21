@@ -612,6 +612,7 @@ Public Module WebservicesModule
         Return False
     End Function
 
+    'Note: this method will also return true if imageUrl is a valid path to a local raster dataset
     Public Function BA_File_ExistsImageServer(ByVal imageUrl As String) As Boolean
         Dim isLayer As IImageServerLayer = New ImageServerLayerClass
         Dim imageRaster As IRaster = Nothing
