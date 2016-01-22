@@ -705,4 +705,32 @@ Public Module WebservicesModule
         Next
         Return fieldList
     End Function
+
+    'Inputs: url to feature service, id of layer to be returned (usually 0)
+    'Returns an IFeatureClass
+    Public Function BA_OpenFeatureClassFromService(ByVal url As String, ByVal layerId As Integer) As IFeatureClass
+        Dim sipPs As IPropertySet = New PropertySet()
+        Dim sipWSF As IWorkspaceFactory = New FeatureServiceWorkspaceFactory()
+        Dim sipWS As IWorkspace = Nothing
+        Dim sipFws As IFeatureWorkspace = Nothing
+        Try
+            'Trim any data after "FeatureServer" in url
+            Dim idxFs As Integer = url.IndexOf(BA_Url_FeatureServer)
+            url = url.Substring(0, (idxFs + BA_Url_FeatureServer.Length))
+            sipPs.SetProperty("DATABASE", url)
+            sipWS = sipWSF.Open(sipPs, 0)
+            sipFws = CType(sipWS, IFeatureWorkspace)
+            Dim strLayerId As String = CType(layerId, String)
+            Return sipFws.OpenFeatureClass(strLayerId)
+        Catch ex As Exception
+            Debug.Print("BA_OpenFeatureClassFromService Exception: " & ex.Message)
+            Return Nothing
+        Finally
+            sipPs = Nothing
+            sipWS = Nothing
+            sipFws = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
 End Module
