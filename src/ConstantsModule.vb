@@ -205,6 +205,7 @@
     'BAGIS V3 constants
     'Connection property of ArcGIS server containing the rest url
     Public Const BA_Property_RestUrl As String = "RestUrl"
+    Public Const BA_Property_SoapUrl As String = "SoapUrl"
     Public Const BA_Url_Services As String = "/services"
     Public Const BA_Url_MapServer As String = "MapServer"
     Public Const BA_Url_ImageServer As String = "ImageServer"
