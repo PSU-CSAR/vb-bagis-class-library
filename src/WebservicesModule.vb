@@ -733,4 +733,34 @@ Public Module WebservicesModule
             GC.Collect()
         End Try
     End Function
+
+    Public Function BA_IsNetworkAvailable(ByVal minimumSpeed As Long) As Boolean
+        If Not NetworkInformation.NetworkInterface.GetIsNetworkAvailable() Then
+            Return False
+        End If
+        For Each ni As NetworkInformation.NetworkInterface In NetworkInformation.NetworkInterface.GetAllNetworkInterfaces
+            'discard because of standard reasons
+            If (ni.OperationalStatus <> NetworkInformation.OperationalStatus.Up) Or
+                (ni.NetworkInterfaceType = NetworkInformation.NetworkInterfaceType.Loopback) Or
+                (ni.NetworkInterfaceType = NetworkInformation.NetworkInterfaceType.Tunnel) Then
+                Continue For
+            End If
+
+            'this allow to filter modems, serial, etc.
+            If ni.Speed < minimumSpeed Then Continue For
+
+            'discard virtual cards (virtual box, virtual pc, etc.)
+            If (ni.Description.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0) Or
+                (ni.Name.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0) Then
+                Continue For
+            End If
+
+
+            'discard "Microsoft Loopback Adapter", it will not show as NetworkInterfaceType.Loopback but as Ethernet Card.
+            If ni.Description.Equals("Microsoft Loopback Adapter", StringComparison.OrdinalIgnoreCase) Then Continue For
+
+            Return True
+        Next
+        Return False
+    End Function
 End Module
