@@ -420,10 +420,9 @@ Public Module WebservicesModule
     'End Function
 
     Public Function BA_UploadMultiPart(ByVal webserviceUrl As String, ByVal strToken As String, _
-                                       ByVal fileName As String, ByVal filePath As String, _
-                                       ByVal comment As String) As AoiTask
+                                        ByVal fileName As String, ByVal filePath As String, _
+                                        ByVal comment As String) As AoiTask
         Dim reqT As HttpWebRequest
-        Dim resT As HttpWebResponse
         Dim anUpload As AoiTask = New AoiTask
         'The end point for getting a token for the web service
         reqT = WebRequest.Create(webserviceUrl)
@@ -440,45 +439,47 @@ Public Module WebservicesModule
         reqT.Headers(HttpRequestHeader.Authorization) = cred
 
         Try
-            Dim requestStream As System.IO.Stream = reqT.GetRequestStream
-            Dim postData As Dictionary(Of String, String) = New Dictionary(Of String, String)
-            postData.Add("filename", fileName)
-            If Not String.IsNullOrEmpty(comment) Then postData.Add("comment", Trim(comment))
+            Using requestStream As System.IO.Stream = reqT.GetRequestStream
+                Dim postData As Dictionary(Of String, String) = New Dictionary(Of String, String)
+                postData.Add("filename", fileName)
+                If Not String.IsNullOrEmpty(comment) Then postData.Add("comment", Trim(comment))
 
-            Dim fileInfo As System.IO.FileInfo = New System.IO.FileInfo(filePath)
-            postData.Add("md5", MultipartFormHelper.GenerateMD5Hash(fileInfo))
-            MultipartFormHelper.WriteMultipartFormData(postData, requestStream, boundary)
+                Dim fileInfo As System.IO.FileInfo = New System.IO.FileInfo(filePath)
+                postData.Add("md5", MultipartFormHelper.GenerateMD5Hash(fileInfo))
+                MultipartFormHelper.WriteMultipartFormData(postData, requestStream, boundary)
 
-            If fileInfo IsNot Nothing Then
-                '@ToDo: Remove hard-coding; write a dynamic function to determine mime type
-                'Dim fileMimeType As String = "text/plain"
-                Dim fileMimeType As String = BA_Mime_Zip
-                Dim fileFormKey As String = "file"
-                MultipartFormHelper.WriteMultipartFormData(fileInfo, requestStream, boundary, fileMimeType, fileFormKey)
-            End If
-            Dim endBytes() As Byte = Encoding.UTF8.GetBytes("--" + boundary + "--")
-            requestStream.Write(endBytes, 0, endBytes.Length)
-            requestStream.Close()
+                If fileInfo IsNot Nothing Then
+                    '@ToDo: Remove hard-coding; write a dynamic function to determine mime type
+                    'Dim fileMimeType As String = "text/plain"
+                    Dim fileMimeType As String = BA_Mime_Zip
+                    Dim fileFormKey As String = "file"
+                    MultipartFormHelper.WriteMultipartFormData(fileInfo, requestStream, boundary, fileMimeType, fileFormKey)
+                End If
+                Dim endBytes() As Byte = Encoding.UTF8.GetBytes("--" + boundary + "--")
+                requestStream.Write(endBytes, 0, endBytes.Length)
+            End Using
 
-            resT = CType(reqT.GetResponse(), HttpWebResponse)
-            'Convert the JSON response to a Task object
-            Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(anUpload.[GetType]())
-            'Put JSON payload into AOI object
-            anUpload = CType(ser.ReadObject(resT.GetResponseStream), AoiTask)
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                'Convert the JSON response to a Task object
+                Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(anUpload.[GetType]())
+                'Put JSON payload into AOI object
+                anUpload = CType(ser.ReadObject(resT.GetResponseStream), AoiTask)
+            End Using
 
             'If we didn't get an exception, the upload was successful
             Return anUpload
         Catch w As WebException
-            Dim exceptResp As HttpWebResponse = TryCast(w.Response, HttpWebResponse)
             Dim sb As StringBuilder = New StringBuilder
-            'The response is a long html page
-            'The exception is indicated with this line: <pre class="exception_value">An AOI of the same name already exists.</pre>
-            '@ToDo: Figure out how to parse the response and pull out this exception_value
-            If exceptResp IsNot Nothing Then
-                Using SReader As System.IO.StreamReader = New System.IO.StreamReader(exceptResp.GetResponseStream)
-                    sb.Append(SReader.ReadToEnd)
-                End Using
-            End If
+            Using exceptResp As HttpWebResponse = TryCast(w.Response, HttpWebResponse)
+                'The response is a long html page
+                'The exception is indicated with this line: <pre class="exception_value">An AOI of the same name already exists.</pre>
+                '@ToDo: Figure out how to parse the response and pull out this exception_value
+                If exceptResp IsNot Nothing Then
+                    Using SReader As System.IO.StreamReader = New System.IO.StreamReader(exceptResp.GetResponseStream)
+                        sb.Append(SReader.ReadToEnd)
+                    End Using
+                End If
+            End Using
             Debug.Print("BA_UploadMultiPart WebException: " & sb.ToString)
             Return anUpload
         Catch ex As Exception
@@ -501,11 +502,9 @@ Public Module WebservicesModule
     Public Function BA_List_Aoi(ByVal url As String, ByVal strToken As String) As Dictionary(Of String, StoredAoi)
         Dim aoiDictionary As Dictionary(Of String, StoredAoi) = New Dictionary(Of String, StoredAoi)
 
-        Dim reqT As HttpWebRequest
-        Dim resT As HttpWebResponse
         'The end point for getting a token for the web service
         url = url & "aois/"
-        reqT = WebRequest.Create(url)
+        Dim reqT As HttpWebRequest = WebRequest.Create(url)
         'This is a GET request
         reqT.Method = "GET"
 
@@ -515,16 +514,38 @@ Public Module WebservicesModule
         reqT.Headers(HttpRequestHeader.Authorization) = cred
 
         Try
-            resT = CType(reqT.GetResponse(), HttpWebResponse)
-
-            'Convert the JSON response to StoredAoiArray object
-            Dim storedAois As StoredAoiArray = New StoredAoiArray
-            Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(storedAois.[GetType]())
-            storedAois = CType(ser.ReadObject(resT.GetResponseStream), StoredAoiArray)
-            'Populate Dictionary from storedAois array
-            For Each sAoi As StoredAoi In storedAois.results
-                aoiDictionary.Add(sAoi.name, sAoi)
-            Next
+            Dim resString As String = Nothing
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                Using source As System.IO.Stream = resT.GetResponseStream
+                    Using sr As System.IO.StreamReader = New System.IO.StreamReader(source)
+                        resString = sr.ReadToEnd
+                    End Using
+                End Using
+            End Using
+            'Convert the JSON response to StoredAoiArray object (response is paginated)
+            Dim byteArray As Byte() = Encoding.UTF8.GetBytes(resString)
+            Using copyStream As System.IO.MemoryStream = New System.IO.MemoryStream(byteArray)
+                If resString.IndexOf("results") > -1 Then
+                    Dim storedAoiArray As StoredAoiArray = New StoredAoiArray
+                    Dim ser1 As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(storedAoiArray.[GetType]())
+                    storedAoiArray = CType(ser1.ReadObject(copyStream), StoredAoiArray)
+                    If storedAoiArray IsNot Nothing AndAlso storedAoiArray.results IsNot Nothing Then
+                        'Populate Dictionary from storedAois array
+                        For Each sAoi As StoredAoi In storedAoiArray.results
+                            aoiDictionary.Add(sAoi.name, sAoi)
+                        Next
+                    End If
+                    'If pagination is not enabled, the results are returned in a different format
+                Else
+                    Dim storedAois As List(Of StoredAoi) = New List(Of StoredAoi)
+                    Dim ser2 As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(storedAois.[GetType]())
+                    storedAois = CType(ser2.ReadObject(copyStream), List(Of StoredAoi))
+                    'Populate Dictionary from storedAois array
+                    For Each sAoi As StoredAoi In storedAois
+                        aoiDictionary.Add(sAoi.name, sAoi)
+                    Next
+                End If
+            End Using
         Catch ex As WebException
             Debug.Print("BA_List_Aoi Exception: " & ex.Message)
         End Try
@@ -533,7 +554,6 @@ Public Module WebservicesModule
 
     Public Function BA_Download_Aoi(ByVal url As String, ByVal strToken As String) As AoiTask
         Dim reqT As HttpWebRequest
-        Dim resT As HttpWebResponse
         Dim aDownload As AoiTask = New AoiTask
         'The end point for getting a token for the web service
         reqT = WebRequest.Create(url)
@@ -545,11 +565,12 @@ Public Module WebservicesModule
         'Put token in header
         reqT.Headers(HttpRequestHeader.Authorization) = cred
         Try
-            resT = CType(reqT.GetResponse(), HttpWebResponse)
-            'Convert the JSON response to an AoiUpload object
-            Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(aDownload.[GetType]())
-            'Put JSON payload into AOI object
-            aDownload = CType(ser.ReadObject(resT.GetResponseStream), AoiTask)
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                'Convert the JSON response to an AoiUpload object
+                Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(aDownload.[GetType]())
+                'Put JSON payload into AOI object
+                aDownload = CType(ser.ReadObject(resT.GetResponseStream), AoiTask)
+            End Using
 
             'Using stream As System.IO.Stream = resT.GetResponseStream
             '    Using streamReader As System.IO.StreamReader = New System.IO.StreamReader(stream)
@@ -566,38 +587,23 @@ Public Module WebservicesModule
     End Function
 
     Public Function BA_GetResponseContentType(ByVal url As String, ByVal token As String) As String
-        Dim reqT As HttpWebRequest
-        Dim resT As HttpWebResponse
         Try
-            reqT = WebRequest.Create(url)
+            Dim reqT As HttpWebRequest = WebRequest.Create(url)
             'This is a GET request
             reqT.Method = "HEAD"
 
             'Retrieve the token and format it for the header; Token comes from caller
             Dim cred As String = String.Format("{0} {1}", "Token", token)
+            Dim contentType As String = Nothing
             'Put token in header
             reqT.Headers(HttpRequestHeader.Authorization) = cred
-            resT = CType(reqT.GetResponse(), HttpWebResponse)
-            Return resT.ContentType
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                contentType = resT.ContentType
+            End Using
+            Return contentType
         Catch ex As WebException
             Debug.Print("TestDownload: " & ex.Message)
             Return Nothing
-        End Try
-    End Function
-
-    Public Function BA_DownloadFile(ByVal url As String, ByVal token As String, ByVal filePath As String) As BA_ReturnCode
-        ' Using WebClient for built-in file download functionality
-        Dim myWebClient As New WebClient()
-        Try
-            'Retrieve the token and format it for the header; Token comes from caller
-            Dim cred As String = String.Format("{0} {1}", "Token", token)
-            'Put token in header
-            myWebClient.Headers(HttpRequestHeader.Authorization) = cred
-            myWebClient.DownloadFile(url, filePath)
-            Return BA_ReturnCode.Success
-        Catch ex As Exception
-            Debug.Print("BA_DownloadFile: " & ex.Message)
-            Return BA_ReturnCode.UnknownError
         End Try
     End Function
 
