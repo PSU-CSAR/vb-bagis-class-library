@@ -6,8 +6,11 @@ Imports ESRI.ArcGIS.esriSystem
 Imports ESRI.ArcGIS.DataSourcesGDB
 Imports ESRI.ArcGIS.Carto
 Imports ESRI.ArcGIS.DataSourcesRaster
+Imports ESRI.ArcGIS.GISClient
+Imports ESRI.ArcGIS.Server
 Imports System.Net
 Imports System.Timers
+Imports System.Windows.Forms
 
 Public Module WebservicesModule
 
@@ -768,5 +771,49 @@ Public Module WebservicesModule
             Return True
         Next
         Return False
+    End Function
+
+    'Takes the input path as an argument
+    'Adds validated urls to checkedUrls dictionary
+    'Return True if not a url or if url valid
+    Public Function BA_VerifyUrl(ByVal inputPath As String, ByRef checkedUrls As IDictionary(Of String, Boolean)) As Boolean
+        Dim AGSConnectionFactory As IAGSServerConnectionFactory = New AGSServerConnectionFactory
+        Dim connectionProps As IPropertySet = New PropertySet
+        Dim AGSConnection As IAGSServerConnection = Nothing
+        Dim checkedUrl As String = inputPath
+        Try
+            Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(inputPath)
+            If wType = WorkspaceType.FeatureServer Or _
+                wType = WorkspaceType.ImageServer Then
+                Dim idxServices As Integer = inputPath.IndexOf(BA_Url_Services)
+                checkedUrl = inputPath.Substring(0, idxServices + BA_Url_Services.Length)
+                If checkedUrls.ContainsKey(checkedUrl) Then
+                    Return checkedUrls(checkedUrl)
+                Else
+                    connectionProps.SetProperty("URL", checkedUrl)
+                    AGSConnection = AGSConnectionFactory.Open(connectionProps, 0)
+                    If Not checkedUrls.ContainsKey(checkedUrl) Then
+                        checkedUrls.Add(checkedUrl, True)
+                    End If
+                    Return True
+                End If
+            Else
+                'The inputPath is not an ArcGIS server resource
+                Return True
+            End If
+        Catch ex As Exception
+            Debug.Print("BA_VerifyUrl Exception: " & ex.Message)
+            If Not checkedUrls.ContainsKey(checkedUrl) Then
+                checkedUrls.Add(checkedUrl, False)
+            Else
+                checkedUrls(checkedUrl) = False
+            End If
+            MessageBox.Show("BAGIS is unable to connect to " & checkedUrl & " data cannot currently be used from this server", "Invalid server", _
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return False
+        Finally
+            connectionProps = Nothing
+            AGSConnection = Nothing
+        End Try
     End Function
 End Module
