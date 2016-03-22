@@ -63,5 +63,4 @@ Public Enum PublicPath
     <Description("\map_parameters.txt")> MapParameters
     <Description("\task_log.xml")> EBagisTaskLog
     <Description("/FeatureServer/0")> FeatureServiceUrl
-    <Description("\BAGIS_Reference_Maps_2016_02_23.lyr")> TerrainLayer
 End Enum
