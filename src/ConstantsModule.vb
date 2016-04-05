@@ -186,6 +186,7 @@
     Public Const BA_Task_Failure = "FAILURE"
     Public Const BA_Task_Success = "SUCCESS"
     Public Const BA_Task_Timed_Out = "TIMED OUT"
+    Public Const BA_Task_Aborted = "ABORTED"
 
     'eBAGIS mime types
     Public Const BA_Mime_Zip = "application/zip"

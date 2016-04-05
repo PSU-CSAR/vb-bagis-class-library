@@ -818,4 +818,44 @@ Public Module WebservicesModule
         End Try
     End Function
 
+    Public Function BA_CancelUpload(ByVal serverUrl As String, ByVal taskId As String, ByVal strToken As String, _
+                                ByRef taskStatus As String) As String
+        Dim reqT As HttpWebRequest
+        'Dim aDownload As AoiTask = New AoiTask
+        'The end point for getting a token for the web service
+        Dim cancelUrl As String = serverUrl & "uploads/" & taskId & "/cancel"
+        reqT = WebRequest.Create(cancelUrl)
+        'This is a GET request
+        reqT.Method = "POST"
+        'Add explicit content length to avoid 411 error
+        reqT.ContentLength = 0
+
+        'Retrieve the token and format it for the header; Token comes from caller
+        Dim cred As String = String.Format("{0} {1}", "Token", strToken)
+        'Put token in header
+        reqT.Headers(HttpRequestHeader.Authorization) = cred
+        Try
+            Dim retMessage As String = ""
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                Select Case resT.StatusCode
+                    Case HttpStatusCode.OK  '200
+                        retMessage = "Upload successfully cancelled"
+                        taskStatus = BA_Task_Success    'Marking it as success is same as JK does on server side
+                    Case HttpStatusCode.BadRequest  '400
+                        retMessage = "Upload could not be cancelled"
+                    Case HttpStatusCode.NotFound    '404
+                        retMessage = "Upload could not be found or you did not have permission"
+                    Case Else   'Catch-all we aren't expecting any other response codes
+                        retMessage = "An error occurred while cancelling the download"
+                        taskStatus = BA_Task_Failure
+                End Select
+            End Using
+            Return retMessage
+        Catch ex As Exception
+            Debug.Print("BA_CancelUpload Exception: " & ex.Message)
+            taskStatus = BA_Task_Failure
+            Return "An error occurred while cancelling the download"
+        End Try
+    End Function
+
 End Module
