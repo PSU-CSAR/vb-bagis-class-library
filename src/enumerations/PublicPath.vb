@@ -60,7 +60,15 @@ Public Enum PublicPath
     <Description("\ExportProfile.xml")> ExportProfileXml
     <Description("\export_report.html")> ExportReportHtml
     <Description("\BAGIS_Parameters.csv")> DefaultParameterTemplate
+    'Table containing result of jh_coeff aoi calculation; Name passed into
+    'bagis_method_building_blocks.tbx\JH_Coef_AOI model via parameter sys_jh_coef_table
+    <Description("\jh_coef_aoi")> JhCoefAoiTable
+    <Description("\LayerParametersLog.xsl")> LayerParametersLogXsl
+    <Description("\LayerParametersLog.xml")> LayerParametersLogXml
+    <Description("\LayerParametersLog.html")> LayerParametersLogHtml
+    <Description("\obs_monthly_pe_sr.csv")> PeAndObsExportCsv
     <Description("\map_parameters.txt")> MapParameters
     <Description("\task_log.xml")> EBagisTaskLog
     <Description("/FeatureServer/0")> FeatureServiceUrl
+    <Description("\BAGIS\bagis-h-settings.json")> BagisHSettings
 End Enum

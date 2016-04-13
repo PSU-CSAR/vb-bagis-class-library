@@ -1,7 +1,7 @@
 ﻿Public Module ConstantsModule
 
     'Class library version; Update with each change to class library
-    Public Const BA_CLASS_LIBRARY_VERSION As String = "L036"
+    Public Const BA_CLASS_LIBRARY_VERSION As String = "L037"
 
     ' Used with BA_QueryAttributeTable to customize query
     Public Const BA_STRING_ATTRIBUTE As String = "string_attribute"
@@ -179,6 +179,26 @@
     Public Const BA_Resample_Cubic = "CUBIC"
     Public Const BA_Resample_Majority = "MAJORITY"
 
+    'Constants for BAGIS-P data manager display
+    Public Const BA_Aoi_Data As String = "AOI"
+    Public Const BA_User_Data As String = "User defined"
+    Public Const BA_Invalid_Data As String = "Invalid"
+    Public Const BA_Valid_Data As String = ""
+
+    'Constant layer names for jh_coeff data
+    Public Const BA_JH_Coef_Aug_Tmax As String = "JH_Coef_Aug_Tmax"
+    Public Const BA_JH_Coef_Aug_Tmin As String = "JH_Coef_Aug_Tmin"
+    Public Const BA_JH_Coef_Jul_Tmax As String = "JH_Coef_Jul_Tmax"
+    Public Const BA_JH_Coef_Jul_Tmin As String = "JH_Coef_Jul_Tmin"
+
+    'Constant parameter names for parameters calculated at the AOI-level
+    Public Const BA_Aoi_Parameter_jh_coef As String = "jh_coef"
+    Public Const BA_Aoi_Parameter_SR_Obs As String = "SR"
+    Public Const BA_Aoi_Parameter_PE_Obs As String = "PET"
+
+    'Constant prefix for BAGIS warning messages from GP
+    Public Const BA_Warning_Message_Prefix As String = "BAGIS"
+
     'eBAGIS task status
     Public Const BA_Task_Staging = "STAGING"
     Public Const BA_Task_Started = "STARTED"
@@ -211,6 +231,7 @@
     Public Const BA_Url_MapServer As String = "MapServer"
     Public Const BA_Url_ImageServer As String = "ImageServer"
     Public Const BA_Url_FeatureServer As String = "FeatureServer"
+
 End Module
 
 
