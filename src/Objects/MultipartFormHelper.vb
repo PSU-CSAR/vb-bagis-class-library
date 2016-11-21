@@ -26,8 +26,8 @@ Public Class MultipartFormHelper
         Next
     End Sub
 
-    Public Shared Sub WriteMultipartFormData(ByRef file As System.IO.FileInfo, ByVal stream As System.IO.Stream, ByVal mimeBoundary As String, _
-                                      ByVal mimeType As String, ByVal formKey As String)
+    Public Shared Function WriteMultipartFormData(ByRef file As System.IO.FileInfo, ByVal stream As System.IO.Stream, ByVal mimeBoundary As String, _
+                                      ByVal mimeType As String, ByVal formKey As String) As Long
         If file Is Nothing Then
             Throw New ArgumentNullException("file")
         End If
@@ -50,20 +50,25 @@ Public Class MultipartFormHelper
         Dim headerBytes As Byte() = Encoding.UTF8.GetBytes(header)
         stream.Write(headerBytes, 0, headerBytes.Length)
 
+        Dim lngTotalBytes As Long = 0
         Using fileStream As New FileStream(file.FullName, FileMode.Open, FileAccess.Read)
             Dim buffer() As Byte = New Byte(1024) {}
             Dim bytesRead As Integer = 0
             bytesRead = fileStream.Read(buffer, 0, buffer.Length)
+            lngTotalBytes = bytesRead
             While bytesRead > 0
                 stream.Write(buffer, 0, bytesRead)
                 bytesRead = fileStream.Read(buffer, 0, buffer.Length)
+                lngTotalBytes = lngTotalBytes + bytesRead
             End While
             fileStream.Close()
         End Using
 
         Dim newLineBytes As Byte() = Encoding.UTF8.GetBytes(vbCrLf)
         stream.Write(newLineBytes, 0, newLineBytes.Length)
-    End Sub
+        lngTotalBytes = lngTotalBytes + newLineBytes.Length
+        Return lngTotalBytes
+    End Function
 
     Public Shared Function CreateFormDataBoundary() As String
         Return "---------------------------" + DateTime.Now.Ticks.ToString("x")

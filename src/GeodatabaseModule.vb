@@ -309,7 +309,7 @@ Public Module GeodatabaseModule
                 Dim snapName As String = BA_GetBareName(snapRasterPath, snapPath)
 
                 Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(snapPath)
-                If WorkspaceType = WorkspaceType.Geodatabase Then
+                If workspaceType = workspaceType.Geodatabase Then
                     snapGDS = BA_OpenRasterFromGDB(snapPath, snapName)
                 ElseIf workspaceType = workspaceType.Raster Then 'input is a GRID
                     snapGDS = BA_OpenRasterFromFile(snapPath, snapName)
@@ -518,7 +518,7 @@ Public Module GeodatabaseModule
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
-            MsgBox("BA_RemoveTemporaryRasters & Exception: " & ex.Message)
+            MsgBox("BA_RemoveFilesByPrefix & Exception: " & ex.Message)
             Return BA_ReturnCode.OtherError
         Finally
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pDataset)
@@ -1797,5 +1797,37 @@ Public Module GeodatabaseModule
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(snapLayer)
         End Try
     End Sub
+
+    Public Function BA_CountPolygons(ByVal pFolder As String, ByVal pFile As String, ByVal keyField As String) As Integer
+        Dim pGeoDataSet As IGeoDataset = Nothing
+        Dim pFeatureClass As IFeatureClass = Nothing
+        Dim pFeatureCursor As IFeatureCursor = Nothing
+        Dim pDataStatistics As IDataStatistics = New DataStatistics
+        Dim statisticsResults As ESRI.ArcGIS.esriSystem.IStatisticsResults = Nothing
+        Try
+            pGeoDataSet = BA_OpenFeatureClassFromGDB(pFolder, pFile)
+            If pGeoDataSet IsNot Nothing Then
+                pFeatureClass = CType(pGeoDataSet, IFeatureClass)
+                pFeatureCursor = pFeatureClass.Search(Nothing, False)
+                'initialize properties for the dataStatistics interface
+                'pDataStatistics.Field = BA_FIELD_HRU_ID
+                pDataStatistics.Field = keyField
+                pDataStatistics.Cursor = pFeatureCursor
+                'Get the result statistics
+                statisticsResults = pDataStatistics.Statistics
+                Return statisticsResults.Count
+            End If
+            Return -1
+        Catch ex As Exception
+            Debug.Print("BA_CountPolygons Exception: " & ex.Message)
+            Return -1
+        Finally
+            pGeoDataSet = Nothing
+            pFeatureClass = Nothing
+            pFeatureCursor = Nothing
+            pDataStatistics = Nothing
+            statisticsResults = Nothing
+        End Try
+    End Function
 
 End Module

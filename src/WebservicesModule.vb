@@ -15,6 +15,7 @@ Imports System.Windows.Forms
 Public Module WebservicesModule
 
     Public Const BA_WebServerName = "https://test.ebagis.geog.pdx.edu"
+    Public Const BA_EbagisApiVersion = "0.1"
 
     Public Function BA_ClipFeatureService(ByVal clipFilePath As String, ByVal webServiceUrl As String, _
                                           ByVal newFilePath As String, ByVal aoiFolder As String) As BA_ReturnCode
@@ -479,13 +480,18 @@ Public Module WebservicesModule
                 'The response is a long html page
                 'The exception is indicated with this line: <pre class="exception_value">An AOI of the same name already exists.</pre>
                 '@ToDo: Figure out how to parse the response and pull out this exception_value
+                sb.Append(fileName & " " & BA_TASK_UPLOAD & " error!" & vbCrLf & vbCrLf)
                 If exceptResp IsNot Nothing Then
                     Using SReader As System.IO.StreamReader = New System.IO.StreamReader(exceptResp.GetResponseStream)
                         sb.Append(SReader.ReadToEnd)
                     End Using
                 End If
             End Using
-            Debug.Print("BA_UploadMultiPart WebException: " & sb.ToString)
+            'Debug.Print("BA_UploadMultiPart WebException: " & sb.ToString)
+            'May dump the error to a local file
+            'Dim tempDir As String = System.IO.Path.GetTempPath
+            'System.IO.File.WriteAllText(tempDir + "\upload_error.txt", sb.ToString)
+            MessageBox.Show(sb.ToString, "Error message", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return anUpload
         Catch ex As Exception
             Debug.Print("BA_UploadMultiPart: " & ex.Message)
@@ -504,11 +510,22 @@ Public Module WebservicesModule
         Next
     End Sub
 
-    Public Function BA_List_Aoi(ByVal url As String, ByVal strToken As String) As Dictionary(Of String, StoredAoi)
+    Public Function BA_List_Aoi(ByVal url As String, ByVal strToken As String, ByVal filter As AOISearchFilter) As Dictionary(Of String, StoredAoi)
         Dim aoiDictionary As Dictionary(Of String, StoredAoi) = New Dictionary(Of String, StoredAoi)
 
         'The end point for getting a token for the web service
         url = url & "aois/"
+        'Build the search string if applicable
+        If filter IsNot Nothing Then
+            'Filtering by user name
+            If Not String.IsNullOrEmpty(filter.UserName) Then
+                url = url + "?created_by=" + filter.UserName
+            ElseIf Not filter.CreatedAfter = Nothing Then
+                url = url + "?created_after=" + filter.StrCreatedAfter
+            ElseIf Not String.IsNullOrEmpty(filter.StringSearch) Then
+                url = url + "?search=" + filter.StringSearch
+            End If
+        End If
         Dim reqT As HttpWebRequest = WebRequest.Create(url)
         'This is a GET request
         reqT.Method = "GET"
@@ -517,6 +534,8 @@ Public Module WebservicesModule
         Dim cred As String = String.Format("{0} {1}", "Token", strToken)
         'Put token in header
         reqT.Headers(HttpRequestHeader.Authorization) = cred
+        'Set the accept header to request the current version of the api
+        reqT.Accept = "application/json; version=" + BA_EbagisApiVersion
 
         Try
             Dim resString As String = Nothing
@@ -585,7 +604,10 @@ Public Module WebservicesModule
 
             'If we didn't get an exception, the upload was successful
             Return aDownload
-        Catch ex As WebException
+        Catch webEx As WebException
+            Debug.Print("BA_Download_Aoi WebException: " & webEx.Message)
+            Return aDownload
+        Catch ex As Exception
             Debug.Print("BA_Download_Aoi Exception: " & ex.Message)
             Return aDownload
         End Try
@@ -614,7 +636,7 @@ Public Module WebservicesModule
 
     Public Function BA_AoiInArchive(ByVal url As String, ByVal strToken As String, _
                                     ByVal aoiName As String) As Boolean
-        Dim storedAois As Dictionary(Of String, StoredAoi) = BA_List_Aoi(url, strToken)
+        Dim storedAois As Dictionary(Of String, StoredAoi) = BA_List_Aoi(url, strToken, Nothing)
         For Each kvp As KeyValuePair(Of String, StoredAoi) In storedAois
             If kvp.Value.name.ToUpper = aoiName.ToUpper Then
                 Return True
@@ -840,7 +862,7 @@ Public Module WebservicesModule
                 Select Case resT.StatusCode
                     Case HttpStatusCode.OK  '200
                         retMessage = "Upload successfully cancelled"
-                        taskStatus = BA_Task_Success    'Marking it as success is same as JK does on server side
+                        taskStatus = BA_Task_Aborted    'Marking it as aborted to match download
                     Case HttpStatusCode.BadRequest  '400
                         retMessage = "Upload could not be cancelled"
                     Case HttpStatusCode.NotFound    '404
@@ -855,6 +877,144 @@ Public Module WebservicesModule
             Debug.Print("BA_CancelUpload Exception: " & ex.Message)
             taskStatus = BA_Task_Failure
             Return "An error occurred while cancelling the download"
+        End Try
+    End Function
+
+    Public Sub BA_TestChunkedUpload(ByVal webserviceUrl As String, ByVal strToken As String, _
+                                    ByVal fileName As String, ByVal filePath As String, _
+                                    ByVal comment As String)
+        Dim reqT As HttpWebRequest
+        Dim anUpload As AoiTask = New AoiTask
+        'The end point for getting a token for the web service
+        reqT = WebRequest.Create(webserviceUrl)
+        'This is a POST request
+        reqT.Method = "PUT"
+        'We are sending a form
+        Dim boundary As String = MultipartFormHelper.CreateFormDataBoundary()
+        reqT.ContentType = "multipart/form-data; boundary=" & boundary
+        reqT.KeepAlive = True
+
+        'Retrieve the token and format it for the header; Token comes from caller
+        Dim cred As String = String.Format("{0} {1}", "Token", strToken)
+        'Put token in header
+        reqT.Headers(HttpRequestHeader.Authorization) = cred
+
+        Dim lngRange As Long = 0
+        Try
+            Using requestStream As System.IO.Stream = reqT.GetRequestStream
+                Dim postData As Dictionary(Of String, String) = New Dictionary(Of String, String)
+                postData.Add("filename", fileName)
+                If Not String.IsNullOrEmpty(comment) Then postData.Add("comment", Trim(comment))
+
+                Dim fileInfo As System.IO.FileInfo = New System.IO.FileInfo(filePath)
+                'postData.Add("md5", MultipartFormHelper.GenerateMD5Hash(fileInfo))
+                postData.Add("placeholder", "123")
+                MultipartFormHelper.WriteMultipartFormData(postData, requestStream, boundary)
+
+                If fileInfo IsNot Nothing Then
+                    '@ToDo: Remove hard-coding; write a dynamic function to determine mime type
+                    'Dim fileMimeType As String = "text/plain"
+                    Dim fileMimeType As String = BA_Mime_Zip
+                    Dim fileFormKey As String = "file"
+                    lngRange = MultipartFormHelper.WriteMultipartFormData(fileInfo, requestStream, boundary, fileMimeType, fileFormKey)
+                End If
+                Dim endBytes() As Byte = Encoding.UTF8.GetBytes("--" + boundary + "--")
+                requestStream.Write(endBytes, 0, endBytes.Length)
+            End Using
+
+            reqT.AddRange(0, lngRange)
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                'Convert the JSON response to a Task object
+                Dim ser As System.Runtime.Serialization.Json.DataContractJsonSerializer = New System.Runtime.Serialization.Json.DataContractJsonSerializer(anUpload.[GetType]())
+                'Put JSON payload into AOI object
+                anUpload = CType(ser.ReadObject(resT.GetResponseStream), AoiTask)
+            End Using
+        Catch w As WebException
+            Dim sb As StringBuilder = New StringBuilder
+            Using exceptResp As HttpWebResponse = TryCast(w.Response, HttpWebResponse)
+                'The response is a long html page
+                'The exception is indicated with this line: <pre class="exception_value">An AOI of the same name already exists.</pre>
+                '@ToDo: Figure out how to parse the response and pull out this exception_value
+                sb.Append(fileName & " " & BA_TASK_UPLOAD & " error!" & vbCrLf & vbCrLf)
+                If exceptResp IsNot Nothing Then
+                    Using SReader As System.IO.StreamReader = New System.IO.StreamReader(exceptResp.GetResponseStream)
+                        sb.Append(SReader.ReadToEnd)
+                    End Using
+                End If
+            End Using
+            'Debug.Print("BA_UploadMultiPart WebException: " & sb.ToString)
+            'May dump the error to a local file
+            'Dim tempDir As String = System.IO.Path.GetTempPath
+            'System.IO.File.WriteAllText(tempDir + "\upload_error.txt", sb.ToString)
+            MessageBox.Show(sb.ToString, "Error message", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            Debug.Print("BA_UploadMultiPart: " & ex.Message)
+        End Try
+
+
+    End Sub
+
+    Public Function BA_VersionTest(ByVal serverUrl As String) As BA_ReturnCode
+        Dim reqT As HttpWebRequest
+        'The end point for checking the api version
+        Dim versionUrl As String = serverUrl & "api-version/"
+        reqT = WebRequest.Create(versionUrl)
+        'This is a GET request
+        reqT.Method = "GET"
+        'Add explicit content length to avoid 411 error
+        reqT.ContentLength = 0
+        'Set the accept header to request a lower version of the api
+        reqT.Accept = "application/json; version=" + BA_EbagisApiVersion
+        Try
+            Dim resString As String = ""
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                Using source As System.IO.Stream = resT.GetResponseStream
+                    Using sr As System.IO.StreamReader = New System.IO.StreamReader(source)
+                        resString = sr.ReadToEnd
+                    End Using
+                End Using
+            End Using
+            MessageBox.Show("Response: " & resString)
+            Return (BA_ReturnCode.Success)
+        Catch ex As Exception
+            Debug.Print("BA_VersionTest: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+
+
+    End Function
+
+    Public Function BA_Delete_Aoi(ByVal url As String, ByVal strToken As String) As BA_ReturnCode
+        Dim reqT As HttpWebRequest
+        'The end point for getting a token for the web service
+        reqT = WebRequest.Create(url)
+        'This is a DELETE request
+        reqT.Method = "DELETE"
+        'Set the accept header to request a lower version of the api
+        reqT.Accept = "application/json; version=" + BA_EbagisApiVersion
+
+        'Retrieve the token and format it for the header; Token comes from caller
+        Dim cred As String = String.Format("{0} {1}", "Token", strToken)
+        'Put token in header
+        reqT.Headers(HttpRequestHeader.Authorization) = cred
+        Try
+            Using resT As HttpWebResponse = CType(reqT.GetResponse(), HttpWebResponse)
+                'Commenting out because the request returns an empty response
+                'Using stream As System.IO.Stream = resT.GetResponseStream
+                '    Using streamReader As System.IO.StreamReader = New System.IO.StreamReader(stream)
+                '        Debug.Print("JSON response -->" & streamReader.ReadToEnd)
+                '    End Using
+                'End Using
+            End Using
+
+            'If we didn't get an exception, the upload was successful
+            Return BA_ReturnCode.Success
+        Catch webEx As WebException
+            Debug.Print("BA_Delete_Aoi WebException: " & webEx.Message)
+            Return BA_ReturnCode.UnknownError
+        Catch ex As Exception
+            Debug.Print("BA_Delete_Aoi Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
         End Try
     End Function
 

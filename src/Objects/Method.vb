@@ -16,6 +16,9 @@ Public Class Method
     Dim m_errorMessage As String
     Dim m_filledParameters As List(Of ModelParameter)
     Dim m_useMethod As Boolean = True
+    Dim m_validationMessages As List(Of String)
+    Dim m_validated As String
+    Dim m_warningMessage As String
 
     ' Required for de-serialization. Do not use.
     Sub New()
@@ -143,6 +146,15 @@ Public Class Method
         End Set
     End Property
 
+    Public Property WarningMessage As String
+        Get
+            Return m_warningMessage
+        End Get
+        Set(ByVal value As String)
+            m_warningMessage = value
+        End Set
+    End Property
+
     ' List of model parameters related to the method with their values filled (calculated)
     Public Property FilledModelParameters() As List(Of ModelParameter)
         Get
@@ -166,4 +178,35 @@ Public Class Method
             m_useMethod = value
         End Set
     End Property
+
+    ' Validation messages; Used when exporting across AOI's
+    Public Property ValidationMessages() As List(Of String)
+        Get
+            Return m_validationMessages
+        End Get
+        Set(ByVal value As List(Of String))
+            m_validationMessages = New List(Of String)
+            If value IsNot Nothing Then
+                If value.Count > 0 Then
+                    m_validationMessages.AddRange(value)
+                End If
+            End If
+        End Set
+    End Property
+
+    Public Property Validated() As String
+        Get
+            If m_validationMessages Is Nothing Then
+                Return "True"
+            ElseIf m_validationMessages.Count = 0 Then
+                Return "True"
+            Else
+                Return "False"
+            End If
+        End Get
+        Set(ByVal value As String)
+            'Do Nothing; Depends on validationMessages list
+        End Set
+    End Property
+
 End Class
