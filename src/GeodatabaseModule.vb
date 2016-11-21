@@ -1664,67 +1664,6 @@ Public Module GeodatabaseModule
         Return return_value
     End Function
 
-    'Returns the ILinearUnit of a raster in a file gdb if the spatial reference is projected
-    Public Function BA_GetLinearUnitOfProjectedRaster(ByVal filePath As String, ByVal fileName As String) As ILinearUnit
-        Dim pGeoDataset As IGeoDataset
-        Dim spatialRef As ISpatialReference
-        Dim projCoord As IProjectedCoordinateSystem
-        Try
-            pGeoDataset = BA_OpenRasterFromGDB(filePath, fileName)
-            spatialRef = pGeoDataset.SpatialReference
-            projCoord = TryCast(spatialRef, IProjectedCoordinateSystem)
-            If projCoord IsNot Nothing Then
-                Return projCoord.CoordinateUnit
-            End If
-            Return Nothing
-        Catch ex As Exception
-            Debug.Print("BA_GetLinearUnitOfProjectedRaster Exception: " & ex.Message)
-            Return Nothing
-        Finally
-            pGeoDataset = Nothing
-            spatialRef = Nothing
-            projCoord = Nothing
-            GC.WaitForPendingFinalizers()
-            GC.Collect()
-        End Try
-    End Function
-
-    'The name of the grid_code field may change depending on the ArcGIS version used and if the
-    'attribute table is in a FGDB. This function checks for both field names and returns the field name
-    'that is found. This function can work with both folders and geodatabases
-    Function BA_FindGridCodeFieldNameForFC(ByVal inputFolder As String, ByVal inputFile As String) As String
-        Dim fc As IFeatureClass = Nothing
-        Dim gridField As String = Nothing
-
-        Try
-            Dim inputPath As String = inputFolder & "\" & inputFile
-            Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(inputPath)
-            If wType = WorkspaceType.Geodatabase Then
-                fc = BA_OpenFeatureClassFromGDB(inputFolder, inputFile)
-            Else
-                fc = BA_OpenFeatureClassFromFile(inputFolder, inputFile)
-            End If
-            If fc IsNot Nothing Then
-                Dim idxFind As Long = fc.FindField(BA_FIELD_GRIDCODE_GDB)
-                If idxFind > 0 Then
-                    gridField = BA_FIELD_GRIDCODE_GDB
-                Else
-                    idxFind = fc.FindField(BA_FIELD_GRIDCODE)
-                    If idxFind > 0 Then
-                        gridField = BA_FIELD_GRIDCODE
-                    End If
-                End If
-            End If
-            Return gridField
-        Catch ex As Exception
-            Debug.Print("BA_FindGridCodeFieldName" & ex.Message)
-            Return gridField
-        Finally
-
-        End Try
-
-    End Function
-
     Public Sub BA_ShapeFile2RasterGDB(ByVal featClass As IFeatureClass, ByVal gdbPath As String, _
                                ByVal FileName As String, ByVal Cellsize As Object, _
                                ByVal valueField As String, ByVal snapRasterPath As String)
@@ -1797,6 +1736,133 @@ Public Module GeodatabaseModule
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(snapLayer)
         End Try
     End Sub
+
+    'Returns the ILinearUnit of a raster in a file gdb if the spatial reference is projected
+    Public Function BA_GetLinearUnitOfProjectedRaster(ByVal filePath As String, ByVal fileName As String) As ILinearUnit
+        Dim pGeoDataset As IGeoDataset
+        Dim spatialRef As ISpatialReference
+        Dim projCoord As IProjectedCoordinateSystem
+        Try
+            pGeoDataset = BA_OpenRasterFromGDB(filePath, fileName)
+            spatialRef = pGeoDataset.SpatialReference
+            projCoord = TryCast(spatialRef, IProjectedCoordinateSystem)
+            If projCoord IsNot Nothing Then
+                Return projCoord.CoordinateUnit
+            End If
+            Return Nothing
+        Catch ex As Exception
+            Debug.Print("BA_GetLinearUnitOfProjectedRaster Exception: " & ex.Message)
+            Return Nothing
+        Finally
+            pGeoDataset = Nothing
+            spatialRef = Nothing
+            projCoord = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
+    'The name of the grid_code field may change depending on the ArcGIS version used and if the
+    'attribute table is in a FGDB. This function checks for both field names and returns the field name
+    'that is found. This function can work with both folders and geodatabases
+    Function BA_FindGridCodeFieldNameForFC(ByVal inputFolder As String, ByVal inputFile As String) As String
+        Dim fc As IFeatureClass = Nothing
+        Dim gridField As String = Nothing
+
+        Try
+            Dim inputPath As String = inputFolder & "\" & inputFile
+            Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(inputPath)
+            If wType = WorkspaceType.Geodatabase Then
+                fc = BA_OpenFeatureClassFromGDB(inputFolder, inputFile)
+            Else
+                fc = BA_OpenFeatureClassFromFile(inputFolder, inputFile)
+            End If
+            If fc IsNot Nothing Then
+                Dim idxFind As Long = fc.FindField(BA_FIELD_GRIDCODE_GDB)
+                If idxFind > 0 Then
+                    gridField = BA_FIELD_GRIDCODE_GDB
+                Else
+                    idxFind = fc.FindField(BA_FIELD_GRIDCODE)
+                    If idxFind > 0 Then
+                        gridField = BA_FIELD_GRIDCODE
+                    End If
+                End If
+            End If
+            Return gridField
+        Catch ex As Exception
+            Debug.Print("BA_FindGridCodeFieldName" & ex.Message)
+            Return gridField
+        Finally
+
+        End Try
+    End Function
+
+    Public Function BA_CountRowsInRaster(ByVal pathToRaster As String) As Integer
+        Dim pGeodataset As IGeoDataset = Nothing
+        Dim pRasterBandCollection As IRasterBandCollection = Nothing
+        Dim pRasterBand As IRasterBand = Nothing
+        Dim pTable As ITable = Nothing
+        Try
+            Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(pathToRaster)
+            Dim folderName As String = "PleaseReturn"
+            Dim fileName As String = BA_GetBareName(pathToRaster, folderName)
+            If wType = WorkspaceType.Geodatabase Then
+                pGeodataset = BA_OpenRasterFromGDB(folderName, fileName)
+            Else
+                pGeodataset = BA_OpenRasterFromFile(folderName, fileName)
+            End If
+
+            If pGeodataset IsNot Nothing Then
+                pRasterBandCollection = CType(pGeodataset, IRasterBandCollection)
+                pRasterBand = pRasterBandCollection.Item(0)
+                pTable = pRasterBand.AttributeTable
+                If pTable IsNot Nothing Then
+                    Return pTable.RowCount(Nothing)
+                End If
+            End If
+            Return -1
+        Catch ex As Exception
+            Debug.Print("BA_CountRowsInRaster Exception: " & ex.Message)
+            Return -1
+        Finally
+            pGeodataset = Nothing
+            pRasterBandCollection = Nothing
+            pRasterBand = Nothing
+            pTable = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
+    Public Function BA_AddUserFieldToVector(ByVal folderName As String, ByVal fileName As String, ByVal fieldName As String, _
+                                        ByVal fieldType As esriFieldType, ByVal fieldLength As Integer) As BA_ReturnCode
+        Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(folderName)
+        Dim targetFC As IFeatureClass = Nothing
+        Dim tFields As IFieldsEdit = Nothing
+        Try
+            If wType = WorkspaceType.Geodatabase Then
+                targetFC = BA_OpenFeatureClassFromGDB(folderName, fileName)
+            Else
+                targetFC = BA_OpenFeatureClassFromFile(folderName, fileName)
+            End If
+            If targetFC IsNot Nothing Then
+                tFields = CType(targetFC.Fields, IFieldsEdit)
+
+                ' Create the new field.
+                Dim newField As IField = New FieldClass()
+                Dim newFieldEdit As IFieldEdit = CType(newField, IFieldEdit)
+                If fieldLength > -1 Then newField.Length_2 = fieldLength ' Only string fields require that you set the length.
+                newField.Name_2 = fieldName
+                newFieldEdit.Type_2 = fieldType
+                tFields.AddField(newField)
+                Return BA_ReturnCode.Success
+            End If
+            Return BA_ReturnCode.UnknownError
+        Catch ex As Exception
+            Debug.Print("BA_AddUserFieldToVector Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
 
     Public Function BA_CountPolygons(ByVal pFolder As String, ByVal pFile As String, ByVal keyField As String) As Integer
         Dim pGeoDataSet As IGeoDataset = Nothing
