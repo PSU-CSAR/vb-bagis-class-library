@@ -3117,4 +3117,11 @@ Public Module MapsModule
         End Try
     End Function
 
+    Public Function BA_CreateElevPrecipLayer(ByVal aoiFolder As String, ByVal prismFolder As String, ByVal prismFileName As String) As BA_ReturnCode
+        Dim demCellSize As Double = BA_CellSize(BA_GeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces), BA_EnumDescription(MapsFileName.filled_dem_gdb))
+        Dim prismCellSize As Double = BA_CellSize(prismFolder, prismFileName)
+        '@ToDo: Try using BA_CellSize in AOI utilities form to help performance
+        Return BA_ReturnCode.Success
+    End Function
+
 End Module

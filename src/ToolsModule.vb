@@ -259,6 +259,37 @@ Public Module ToolsModule
         End Try
     End Function
 
+    Private Function Execute_GeoprocessingWithCellSize(ByVal tool As IGPProcess, ByVal addOutputs As Boolean, _
+                                                       ByVal snapRasterPath As String, ByVal cellSize As String) As Short
+        Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
+        Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult = Nothing
+        Try
+            GP.OverwriteOutput = True
+            GP.SetEnvironmentValue("cellsize", cellSize)
+            GP.AddOutputsToMap = addOutputs
+            'BA_ListGPEnvironmentSettings(GP)
+            If Not String.IsNullOrEmpty(snapRasterPath) Then
+                GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            End If
+            pResult = GP.Execute(tool, Nothing)
+            Return 1
+        Catch ex As Exception
+            For c As Integer = 0 To GP.MessageCount - 1
+                Debug.Print("GP error: " & GP.GetMessage(c))
+            Next
+            If GP.MessageCount > 0 Then
+                MessageBox.Show("Geoprocessor error: " + GP.GetMessages(2))
+            Else
+                MessageBox.Show("Exception: " + ex.Message)
+            End If
+            Return -1
+        Finally
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(tool)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pResult)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(GP)
+        End Try
+    End Function
+
     Private Function UpdateVectorColumn(ByVal sourceTable As ITable, ByRef targetDataSet As IGeoDataset, _
                                            ByVal sourceColName As String, ByVal targetColName As String, _
                                            ByVal srcField As String, ByVal overwrite As Boolean) As Short
@@ -1384,6 +1415,21 @@ Public Module ToolsModule
         tool.expression_type = expressionType
         'No snapRasterPath because not a spatial analyst tool
         If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
+    Public Function BA_Aggregate(ByVal inRaster As String, ByVal outRaster As String, ByVal cellFactor As String, _
+                                 ByVal snapRasterPath As String) As BA_ReturnCode
+        Dim tool As Aggregate = New Aggregate
+        tool.in_raster = inRaster
+        tool.out_raster = outRaster
+        tool.cell_factor = cellFactor
+        'Note: As of AGS 10.2 env settings cell size needs to be set to cell factor to line up correctly
+        'Makes no sense to us; May change
+        If Execute_GeoprocessingWithCellSize(tool, False, snapRasterPath, cellFactor) = 1 Then
             Return BA_ReturnCode.Success
         Else
             Return BA_ReturnCode.UnknownError
