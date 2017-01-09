@@ -1422,14 +1422,14 @@ Public Module ToolsModule
     End Function
 
     Public Function BA_Aggregate(ByVal inRaster As String, ByVal outRaster As String, ByVal cellFactor As String, _
-                                 ByVal snapRasterPath As String) As BA_ReturnCode
+                                 ByVal cellSize As String, ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Aggregate = New Aggregate
         tool.in_raster = inRaster
         tool.out_raster = outRaster
         tool.cell_factor = cellFactor
         'Note: As of AGS 10.2 env settings cell size needs to be set to cell factor to line up correctly
         'Makes no sense to us; May change
-        If Execute_GeoprocessingWithCellSize(tool, False, snapRasterPath, cellFactor) = 1 Then
+        If Execute_GeoprocessingWithCellSize(tool, False, snapRasterPath, cellSize) = 1 Then
             Return BA_ReturnCode.Success
         Else
             Return BA_ReturnCode.UnknownError
