@@ -3126,7 +3126,8 @@ Public Module MapsModule
             Dim resampleDemPath As String = BA_GeodatabasePath(aoiFolder, GeodatabaseNames.Analysis) + "\resampleDem"
             Dim cellFactor As Integer = Math.Round(prismCellSize / demCellSize)
             Dim cellSize As Double = prismCellSize / cellFactor
-            Dim success As BA_ReturnCode = BA_Aggregate(demPath, resampleDemPath, cellFactor, cellSize, prismPath)
+            Dim aggregateType As String = BA_FieldNameFromStatisticEnum(esriGeoAnalysisStatisticsEnum.esriGeoAnalysisStatsMean)
+            Dim success As BA_ReturnCode = BA_Aggregate(demPath, resampleDemPath, cellFactor, cellSize, prismPath, aggregateType)
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
