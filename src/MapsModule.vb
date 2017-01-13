@@ -9,6 +9,7 @@ Imports System.Windows.Forms
 Imports System.Text
 Imports ESRI.ArcGIS.esriSystem
 Imports ESRI.ArcGIS.GeoAnalyst
+Imports Microsoft.Office.Interop.Excel
 
 Public Module MapsModule
 
@@ -541,8 +542,8 @@ Public Module MapsModule
                 'search layer of the specified name, if found
                 Dim pMap As IMap = pMxDoc.FocusMap
                 Dim nlayers As Integer = pMap.LayerCount
-                For I = nlayers To 1 Step -1
-                    pTempLayer = CType(pMap.Layer(I - 1), ILayer)   'Explicit cast
+                For i = nlayers To 1 Step -1
+                    pTempLayer = CType(pMap.Layer(i - 1), ILayer)   'Explicit cast
                     If DisplayName = pTempLayer.Name Then 'remove the layer
                         pMap.DeleteLayer(pTempLayer)
                     End If
@@ -2075,7 +2076,7 @@ Public Module MapsModule
             Dim pTextSymbol As IFormattedTextSymbol
             Dim pTextFont As stdole.IFontDisp
             Dim pPntElement As IElement
-            Dim pPoint As IPoint
+            Dim pPoint As ESRI.ArcGIS.Geometry.IPoint
             ' Define the text font.
             pTextFont = New stdole.StdFont
             With pTextFont
@@ -2098,7 +2099,7 @@ Public Module MapsModule
             pTextElement.Symbol = pTextSymbol
 
             ' Define the position to plot the title.
-            pPoint = New Point
+            pPoint = New ESRI.ArcGIS.Geometry.Point
             pPoint.X = 4.0#
             pPoint.Y = 10.5
             pPntElement = pTextElement
@@ -2132,7 +2133,7 @@ Public Module MapsModule
 
             ' Define the position to plot the subtitle.
             pPntElement = pTextElement
-            pPoint = New Point
+            pPoint = New ESRI.ArcGIS.Geometry.Point
             pPoint.X = 4.0#
             pPoint.Y = 10.1
             pPntElement.Geometry = pPoint
@@ -2163,7 +2164,7 @@ Public Module MapsModule
 
             ' Define the position to plot the textbox.
             pPntElement = pTextElement
-            pPoint = New Point
+            pPoint = New ESRI.ArcGIS.Geometry.Point
             pPoint.X = 5.0#
             pPoint.Y = 1.0
             pPntElement.Geometry = pPoint
@@ -2192,7 +2193,7 @@ Public Module MapsModule
             pEnumStyleGallery.Reset()
 
             Dim pStyleItem As IStyleGalleryItem2 = pEnumStyleGallery.Next
-            Dim pBorder As IBorder = New SymbolBorder
+            Dim pBorder As ESRI.ArcGIS.Carto.IBorder = New SymbolBorder
 
             Do Until pStyleItem Is Nothing
                 If pStyleItem.Name = "1.5 Point" Then
@@ -2553,7 +2554,7 @@ Public Module MapsModule
 
         Dim pMapSurround As IMapSurround
         Dim pMapSurroundFrame As IMapSurroundFrame
-        Dim pLegend As ILegend
+        Dim pLegend As ESRI.ArcGIS.Carto.ILegend
         Dim pLegendItem As ILegendItem
         Dim pLFormat As ILegendFormat
         Dim pLClsFormat As ILegendClassFormat
@@ -2660,7 +2661,7 @@ Public Module MapsModule
 
         Dim pMapSurround As IMapSurround
         Dim pMapSurroundFrame As IMapSurroundFrame
-        Dim pLegend As ILegend
+        Dim pLegend As ESRI.ArcGIS.Carto.ILegend
 
         If IsLegend Then
             pMapSurroundFrame = pMElem
@@ -2993,8 +2994,8 @@ Public Module MapsModule
         pEnv.QueryCoords(llx, lly, urx, ury)
         xrange = urx - llx
         yrange = ury - lly
-        xoffset = xrange * (Buffer_Factor - 1) / 2
-        yoffset = yrange * (Buffer_Factor - 1) / 2
+        xoffset = xrange * (buffer_Factor - 1) / 2
+        yoffset = yrange * (buffer_Factor - 1) / 2
         llx = llx - xoffset
         lly = lly - yoffset
         urx = urx + xoffset
@@ -3132,6 +3133,63 @@ Public Module MapsModule
         Catch ex As Exception
             Debug.Print("BA_CreateElevPrecipLayer Exception: " & ex.Message)
             Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
+    Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
+                                                  ByVal elevFieldName As String, ByVal objExcel As Microsoft.Office.Interop.Excel.Application) As BA_ReturnCode
+        'Declare Excel object variables
+        Dim pTable As ITable = Nothing
+        Dim pCursor As ICursor
+        Dim pRow As IRow
+        Dim pQFilter As IQueryFilter = New QueryFilter
+
+        Try
+            Dim bkWorkBook As Workbook = objExcel.Workbooks.Add 'a file in excel
+            'Create Precipitation Representation Worksheet
+            Dim pAreaElvWorksheet As Worksheet = bkWorkBook.Sheets.Add
+            pAreaElvWorksheet.Name = "precip_elev_AOI"
+
+            '=============================================
+            'Create Field Titles
+            '=============================================
+            Dim idxPrecipExcelCol As Short = 1
+            Dim idxElevExcelCol As Short = 2
+            '@ToDo: Get correct units from AOI
+            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (Inches)"
+            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (Feet)"
+
+            'Open up table with data from sample function
+            pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
+            If pTable IsNot Nothing Then
+                Dim idxPrecipTableCol As Short = pTable.FindField(precipFieldName)
+                Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
+                If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 Then
+                    pQFilter = New QueryFilter
+                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
+                    pCursor = pTable.Search(pQFilter, False)
+                    Dim idxRow As Integer = 2
+                    If pCursor IsNot Nothing Then
+                        pRow = pCursor.NextRow
+                        Do While pRow IsNot Nothing
+                            pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
+                            pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
+                            pRow = pCursor.NextRow
+                            idxRow += 1
+                        Loop
+                    End If
+                End If
+            End If
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            Debug.Print("BA_CreateRepresentPrecipTable Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pCursor = Nothing
+            pTable = Nothing
+            pRow = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
         End Try
     End Function
 
