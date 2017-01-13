@@ -1437,6 +1437,22 @@ Public Module ToolsModule
         End If
     End Function
 
+    Public Function BA_Sample(ByVal inRasterPaths As String, ByVal inLocationPath As String, ByVal outTablePath As String, _
+                              ByVal snapRasterPath As String, ByVal resamplingType As String) As BA_ReturnCode
+        Dim tool As Sample = New Sample
+        tool.in_rasters = inRasterPaths
+        tool.in_location_data = inLocationPath
+        tool.out_table = outTablePath
+        tool.resampling_type = resamplingType
+        'Note: As of AGS 10.2 env settings cell size needs to be set to cell factor to line up correctly
+        'Makes no sense to us; May change
+        If Execute_Geoprocessing(tool, False, snapRasterPath) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
 End Module
 
 

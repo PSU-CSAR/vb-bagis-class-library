@@ -3117,18 +3117,17 @@ Public Module MapsModule
         End Try
     End Function
 
-    Public Function BA_CreateElevPrecipLayer(ByVal aoiFolder As String, ByVal prismFolder As String, ByVal prismFileName As String) As BA_ReturnCode
+    Public Function BA_CreateElevPrecipLayer(ByVal aoiFolder As String, ByVal prismFolder As String, ByVal prismFileName As String, _
+                                             ByVal resampleDemPath As String) As BA_ReturnCode
         Try
             Dim demCellSize As Double = BA_CellSize(BA_GeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces), BA_EnumDescription(MapsFileName.filled_dem_gdb))
             Dim prismCellSize As Double = BA_CellSize(prismFolder, prismFileName)
             Dim prismPath As String = prismFolder + "\" + prismFileName
             Dim demPath As String = BA_GeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces) + "\" + BA_EnumDescription(MapsFileName.filled_dem_gdb)
-            Dim resampleDemPath As String = BA_GeodatabasePath(aoiFolder, GeodatabaseNames.Analysis) + "\resampleDem"
             Dim cellFactor As Integer = Math.Round(prismCellSize / demCellSize)
             Dim cellSize As Double = prismCellSize / cellFactor
             Dim aggregateType As String = BA_FieldNameFromStatisticEnum(esriGeoAnalysisStatisticsEnum.esriGeoAnalysisStatsMean)
             Dim success As BA_ReturnCode = BA_Aggregate(demPath, resampleDemPath, cellFactor, cellSize, prismPath, aggregateType)
-
             Return BA_ReturnCode.Success
         Catch ex As Exception
             Debug.Print("BA_CreateElevPrecipLayer Exception: " & ex.Message)
