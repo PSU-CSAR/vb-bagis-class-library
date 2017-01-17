@@ -10,6 +10,7 @@ Imports System.Text
 Imports ESRI.ArcGIS.esriSystem
 Imports ESRI.ArcGIS.GeoAnalyst
 Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Core
 
 Public Module MapsModule
 
@@ -3137,27 +3138,26 @@ Public Module MapsModule
     End Function
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                                  ByVal elevFieldName As String, ByVal objExcel As Microsoft.Office.Interop.Excel.Application) As BA_ReturnCode
-        'Declare Excel object variables
+                                                  ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal worksheetName As String, _
+                                                  ByVal demTitleUnit As String, ByVal precipTitleUnit As String) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
         Dim pRow As IRow
         Dim pQFilter As IQueryFilter = New QueryFilter
 
         Try
-            Dim bkWorkBook As Workbook = objExcel.Workbooks.Add 'a file in excel
             'Create Precipitation Representation Worksheet
             Dim pAreaElvWorksheet As Worksheet = bkWorkBook.Sheets.Add
-            pAreaElvWorksheet.Name = "precip_elev_AOI"
+            pAreaElvWorksheet.Name = worksheetName
 
             '=============================================
             'Create Field Titles
             '=============================================
             Dim idxPrecipExcelCol As Short = 1
             Dim idxElevExcelCol As Short = 2
-            '@ToDo: Get correct units from AOI
-            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (Inches)"
-            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (Feet)"
+
+            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation" + precipTitleUnit
+            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation" + demTitleUnit
 
             'Open up table with data from sample function
             pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
@@ -3192,5 +3192,109 @@ Public Module MapsModule
             GC.Collect()
         End Try
     End Function
+
+    Public Function BA_CreateRepresentPrecipChart(ByVal bkWorkBook As Workbook, ByVal dataSheetName As String, _
+                                                  ByVal XAxisTitleUnit As String, ByVal YAxisTitleUnit As String, _
+                                                  ByVal dem_min As Double, ByVal precip_min As Double) As BA_ReturnCode
+        Try
+            Dim wkshtName As String = "Charts"
+            Dim pChartsWorksheet As Worksheet = Nothing
+            Dim pDataWorksheet As Worksheet = Nothing
+            ' Find the existing charts worksheet; If missing, create it
+            For Each wksht As Worksheet In bkWorkBook.Worksheets
+                If wksht.Name.Equals(wkshtName) Then
+                    pChartsWorksheet = wksht
+                    Exit For
+                End If
+            Next wksht
+            If pChartsWorksheet Is Nothing Then
+                pChartsWorksheet = bkWorkBook.Sheets.Add
+                pChartsWorksheet.Name = "Charts"
+            End If
+            ' Find the worksheet with the data; If missing exit with error
+            For Each wksht As Worksheet In bkWorkBook.Worksheets
+                If wksht.Name.Equals(dataSheetName) Then
+                    pDataWorksheet = wksht
+                    Exit For
+                End If
+            Next wksht
+            If pDataWorksheet Is Nothing Then
+                Debug.Print("Supporting data for represented precipitation chart is missing")
+                Return BA_ReturnCode.ReadError
+            End If
+
+            Dim myChart As Chart = pChartsWorksheet.Shapes.AddChart.Chart
+            With myChart
+                'Clear Styles
+                .ClearToMatchStyle()
+                'Insert Title
+                .HasTitle = True
+                .HasLegend = True
+                .ChartTitle.Caption = "Precipitation representation areas"
+                'Set Chart Type and Data Range
+                .ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter
+
+                'Set Chart Position
+                .Parent.Left = BA_ChartSpacing
+                .Parent.Width = BA_ChartWidth
+                .Parent.Top = BA_ChartHeight + BA_ChartSpacing + BA_ChartSpacing
+                .Parent.Height = BA_ChartHeight
+            End With
+
+            'Set series for elev/Prism
+            Dim nrecords As Long = BA_Excel_CountRecords(pDataWorksheet, 2)
+            Dim precipValueRange As String = "A2:A" & nrecords + 2
+            Dim xDemValueRange As String = "B2:B" & nrecords + 2
+            Dim ser As Series = myChart.SeriesCollection.NewSeries
+
+            With ser
+                .Name = "AOI"
+                'Set Series Values
+                .Values = pDataWorksheet.Range(precipValueRange)
+                .XValues = pDataWorksheet.Range(xDemValueRange)
+                'Set Series Formats
+                .MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStylePlus
+                .MarkerSize = 3
+                '.MarkerForegroundColor = RGB(246, 32, 10)
+                '.MarkerBackgroundColor = RGB(246, 32, 10)
+            End With
+
+            With myChart
+                'Set Element Positions
+                .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
+                .SetElement(MsoChartElementType.msoElementLegendBottom)
+
+                'Left Side Axis
+                With .Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary)
+                    .HasTitle = True
+                    .AxisTitle.Characters.Text = "Precipitation" & YAxisTitleUnit
+                    .AxisTitle.Orientation = 90
+                    '.MaximumScale = Y_Max
+                    .MinimumScale = precip_min
+                    '.MajorUnit = Y_Unit
+                End With
+
+                'Bottom Axis
+                Dim categoryAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, _
+                                                                                      Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
+                With categoryAxis
+                    .HasTitle = True
+                    .AxisTitle.Characters.Text = "Elevation" & XAxisTitleUnit
+                    .AxisTitle.Orientation = 0
+                    '.MaximumScale = "100.1"
+                    .MinimumScale = dem_min
+                End With
+
+            End With
+
+
+
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            Debug.Print("BA_CreateRepresentPrecipChart Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
 
 End Module
