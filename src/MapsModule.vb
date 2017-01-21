@@ -3138,26 +3138,22 @@ Public Module MapsModule
     End Function
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                                  ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal worksheetName As String, _
-                                                  ByVal demTitleUnit As String, ByVal precipTitleUnit As String) As BA_ReturnCode
+                                                  ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
+                                                  ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
         Dim pRow As IRow
         Dim pQFilter As IQueryFilter = New QueryFilter
 
         Try
-            'Create Precipitation Representation Worksheet
-            Dim pAreaElvWorksheet As Worksheet = bkWorkBook.Sheets.Add
-            pAreaElvWorksheet.Name = worksheetName
-
             '=============================================
             'Create Field Titles
             '=============================================
             Dim idxPrecipExcelCol As Short = 1
             Dim idxElevExcelCol As Short = 2
 
-            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation" + precipTitleUnit
-            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation" + demTitleUnit
+            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
+            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
 
             'Open up table with data from sample function
             pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
@@ -3193,36 +3189,10 @@ Public Module MapsModule
         End Try
     End Function
 
-    Public Function BA_CreateRepresentPrecipChart(ByVal bkWorkBook As Workbook, ByVal dataSheetName As String, _
-                                                  ByVal XAxisTitleUnit As String, ByVal YAxisTitleUnit As String, _
+    Public Function BA_CreateRepresentPrecipChart(ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
+                                                  ByVal pChartsWorksheet As Worksheet, ByVal XAxisTitleUnit As MeasurementUnit, ByVal YAxisTitleUnit As MeasurementUnit, _
                                                   ByVal dem_min As Double, ByVal precip_min As Double) As BA_ReturnCode
         Try
-            Dim wkshtName As String = "Charts"
-            Dim pChartsWorksheet As Worksheet = Nothing
-            Dim pDataWorksheet As Worksheet = Nothing
-            ' Find the existing charts worksheet; If missing, create it
-            For Each wksht As Worksheet In bkWorkBook.Worksheets
-                If wksht.Name.Equals(wkshtName) Then
-                    pChartsWorksheet = wksht
-                    Exit For
-                End If
-            Next wksht
-            If pChartsWorksheet Is Nothing Then
-                pChartsWorksheet = bkWorkBook.Sheets.Add
-                pChartsWorksheet.Name = "Charts"
-            End If
-            ' Find the worksheet with the data; If missing exit with error
-            For Each wksht As Worksheet In bkWorkBook.Worksheets
-                If wksht.Name.Equals(dataSheetName) Then
-                    pDataWorksheet = wksht
-                    Exit For
-                End If
-            Next wksht
-            If pDataWorksheet Is Nothing Then
-                Debug.Print("Supporting data for represented precipitation chart is missing")
-                Return BA_ReturnCode.ReadError
-            End If
-
             Dim myChart As Chart = pChartsWorksheet.Shapes.AddChart.Chart
             With myChart
                 'Clear Styles
@@ -3230,19 +3200,19 @@ Public Module MapsModule
                 'Insert Title
                 .HasTitle = True
                 .HasLegend = True
-                .ChartTitle.Caption = "Precipitation representation areas"
+                .ChartTitle.Caption = "Precipitation Representation Areas"
                 'Set Chart Type and Data Range
                 .ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter
 
                 'Set Chart Position
-                .Parent.Left = BA_ChartSpacing
+                .Parent.Left = BA_ChartWidth + BA_ChartSpacing + BA_ChartSpacing
                 .Parent.Width = BA_ChartWidth
-                .Parent.Top = BA_ChartHeight + BA_ChartSpacing + BA_ChartSpacing
+                .Parent.Top = (BA_ChartHeight + BA_ChartSpacing) * 3 + BA_ChartSpacing
                 .Parent.Height = BA_ChartHeight
             End With
 
             'Set series for elev/Prism
-            Dim nrecords As Long = BA_Excel_CountRecords(pDataWorksheet, 2)
+            Dim nrecords As Long = BA_Excel_CountRecords(pAreaElvWorksheet, 2)
             Dim precipValueRange As String = "A2:A" & nrecords + 2
             Dim xDemValueRange As String = "B2:B" & nrecords + 2
             Dim ser As Series = myChart.SeriesCollection.NewSeries
@@ -3250,8 +3220,8 @@ Public Module MapsModule
             With ser
                 .Name = "AOI"
                 'Set Series Values
-                .Values = pDataWorksheet.Range(precipValueRange)
-                .XValues = pDataWorksheet.Range(xDemValueRange)
+                .Values = pAreaElvWorksheet.Range(precipValueRange)
+                .XValues = pAreaElvWorksheet.Range(xDemValueRange)
                 'Set Series Formats
                 .MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStylePlus
                 .MarkerSize = 3
@@ -3259,18 +3229,26 @@ Public Module MapsModule
                 '.MarkerBackgroundColor = RGB(246, 32, 10)
             End With
 
+            '@ToDo: work on formatting trendline
+            Dim trendlines As Microsoft.Office.Interop.Excel.Trendlines = ser.Trendlines
+            Dim trendline As Microsoft.Office.Interop.Excel.Trendline =
+                trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
+                System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
+                True, True, "Linear (AOI)")
+
             With myChart
                 'Set Element Positions
                 .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
                 .SetElement(MsoChartElementType.msoElementLegendBottom)
 
                 'Left Side Axis
-                With .Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary)
+                Dim yAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
+                With yAxis
                     .HasTitle = True
-                    .AxisTitle.Characters.Text = "Precipitation" & YAxisTitleUnit
+                    .AxisTitle.Text = "Precipitation (" + BA_EnumDescription(YAxisTitleUnit) + ")"
                     .AxisTitle.Orientation = 90
                     '.MaximumScale = Y_Max
-                    .MinimumScale = precip_min
+                    .MinimumScale = Math.Round(precip_min)
                     '.MajorUnit = Y_Unit
                 End With
 
@@ -3279,15 +3257,13 @@ Public Module MapsModule
                                                                                       Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
                 With categoryAxis
                     .HasTitle = True
-                    .AxisTitle.Characters.Text = "Elevation" & XAxisTitleUnit
+                    .AxisTitle.Text = "Elevation (" + BA_EnumDescription(XAxisTitleUnit) + ")"
                     .AxisTitle.Orientation = 0
                     '.MaximumScale = "100.1"
-                    .MinimumScale = dem_min
+                    .MinimumScale = Math.Round(dem_min)
+                    .HasMajorGridlines = True
                 End With
-
             End With
-
-
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
