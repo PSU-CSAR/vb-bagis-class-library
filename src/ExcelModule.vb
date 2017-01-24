@@ -2010,6 +2010,8 @@ Public Module ExcelModule
                 trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
                 System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
                 True, True, "Linear (AOI)")
+            trendline.DataLabel.Left = trendline.DataLabel.Left - 300
+            trendline.DataLabel.Font.Bold = True
 
             With myChart
                 'Set Element Positions
@@ -2044,6 +2046,61 @@ Public Module ExcelModule
         Catch ex As Exception
             Debug.Print("BA_CreateRepresentPrecipChart Exception: " & ex.Message)
             Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
+    Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
+                                          ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
+                                          ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
+        Dim pTable As ITable = Nothing
+        Dim pCursor As ICursor
+        Dim pRow As IRow
+        Dim pQFilter As IQueryFilter = New QueryFilter
+
+        Try
+            '=============================================
+            'Create Field Titles
+            '=============================================
+            Dim idxElevExcelCol As Short = 1
+            Dim idxNameCol As Short = 2
+            Dim idxPrecipExcelCol As Short = 3
+
+            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
+            pAreaElvWorksheet.Cells(1, idxNameCol) = "BA_SNAME"
+            'RASTERVALU after extract values to points
+            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
+
+            'Open up table with data from sample function
+            pTable = BA_OpenTableFromGDB(vectorGdbPath, tableFileName)
+            If pTable IsNot Nothing Then
+                Dim idxPrecipTableCol As Short = pTable.FindField(precipFieldName)
+                Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
+                If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 Then
+                    pQFilter = New QueryFilter
+                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
+                    pCursor = pTable.Search(pQFilter, False)
+                    Dim idxRow As Integer = 2
+                    If pCursor IsNot Nothing Then
+                        pRow = pCursor.NextRow
+                        Do While pRow IsNot Nothing
+                            pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
+                            pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
+                            pRow = pCursor.NextRow
+                            idxRow += 1
+                        Loop
+                    End If
+                End If
+            End If
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            Debug.Print("BA_CreateRepresentPrecipTable Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pCursor = Nothing
+            pTable = Nothing
+            pRow = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
         End Try
     End Function
 
