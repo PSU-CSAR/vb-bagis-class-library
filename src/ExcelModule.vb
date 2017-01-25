@@ -1913,7 +1913,7 @@ Public Module ExcelModule
     End Function
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                              ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
+                                              ByVal elevFieldName As String, ByVal pAreaElvWorksheet As Worksheet, _
                                               ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
@@ -2049,12 +2049,12 @@ Public Module ExcelModule
         End Try
     End Function
 
-    Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                          ByVal elevFieldName As String, ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
-                                          ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
-        Dim pTable As ITable = Nothing
-        Dim pCursor As ICursor
-        Dim pRow As IRow
+    Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
+                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
+                                          ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
+        Dim pFClass As IFeatureClass = Nothing
+        Dim pCursor As IFeatureCursor
+        Dim pFeature As IFeature
         Dim pQFilter As IQueryFilter = New QueryFilter
 
         Try
@@ -2062,30 +2062,31 @@ Public Module ExcelModule
             'Create Field Titles
             '=============================================
             Dim idxElevExcelCol As Short = 1
-            Dim idxNameCol As Short = 2
+            Dim idxNameExcelCol As Short = 2
             Dim idxPrecipExcelCol As Short = 3
 
-            pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
-            pAreaElvWorksheet.Cells(1, idxNameCol) = "BA_SNAME"
+            pStelElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
+            pStelElvWorksheet.Cells(1, idxNameExcelCol) = "BA_SNAME"
             'RASTERVALU after extract values to points
-            pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
+            pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
 
             'Open up table with data from sample function
-            pTable = BA_OpenTableFromGDB(vectorGdbPath, tableFileName)
-            If pTable IsNot Nothing Then
-                Dim idxPrecipTableCol As Short = pTable.FindField(precipFieldName)
-                Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
-                If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 Then
+            pFClass = BA_OpenFeatureClassFromGDB(vectorGdbPath, vectorFileName)
+            If pFClass IsNot Nothing Then
+                Dim idxPrecipCol As Short = pFClass.FindField(precipFieldName)
+                Dim idxElevCol As Short = pFClass.FindField(elevFieldName)
+                Dim idxNameCol As Short = pFClass.FindField(nameFieldName)
+                If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 Then
                     pQFilter = New QueryFilter
-                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
-                    pCursor = pTable.Search(pQFilter, False)
+                    pCursor = pFClass.Search(pQFilter, False)
                     Dim idxRow As Integer = 2
                     If pCursor IsNot Nothing Then
-                        pRow = pCursor.NextRow
-                        Do While pRow IsNot Nothing
-                            pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
-                            pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
-                            pRow = pCursor.NextRow
+                        pFeature = pCursor.NextFeature
+                        Do While pFeature IsNot Nothing
+                            pStelElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pFeature.Value(idxPrecipCol))
+                            pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol))
+                            pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
+                            pFeature = pCursor.NextFeature
                             idxRow += 1
                         Loop
                     End If
@@ -2093,12 +2094,12 @@ Public Module ExcelModule
             End If
             Return BA_ReturnCode.Success
         Catch ex As Exception
-            Debug.Print("BA_CreateRepresentPrecipTable Exception: " & ex.Message)
+            Debug.Print("BA_CreateSnotelPrecipTable Exception: " & ex.Message)
             Return BA_ReturnCode.UnknownError
         Finally
             pCursor = Nothing
-            pTable = Nothing
-            pRow = Nothing
+            pFClass = Nothing
+            pFeature = Nothing
             GC.WaitForPendingFinalizers()
             GC.Collect()
         End Try
