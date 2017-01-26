@@ -1964,8 +1964,8 @@ Public Module ExcelModule
         End Try
     End Function
 
-    Public Function BA_CreateRepresentPrecipChart(ByVal bkWorkBook As Workbook, ByVal pAreaElvWorksheet As Worksheet, _
-                                                  ByVal pChartsWorksheet As Worksheet, ByVal XAxisTitleUnit As MeasurementUnit, ByVal YAxisTitleUnit As MeasurementUnit, _
+    Public Function BA_CreateRepresentPrecipChart(ByVal bkWorkBook As Workbook, ByVal pPrecipElvWorksheet As Worksheet, _
+                                                  ByVal pPrecipSNOTELWorksheet As Worksheet, ByVal pChartsWorksheet As Worksheet, ByVal XAxisTitleUnit As MeasurementUnit, ByVal YAxisTitleUnit As MeasurementUnit, _
                                                   ByVal dem_min As Double, ByVal precip_min As Double) As BA_ReturnCode
         Try
             Dim myChart As Chart = pChartsWorksheet.Shapes.AddChart.Chart
@@ -1986,32 +1986,67 @@ Public Module ExcelModule
                 .Parent.Height = BA_ChartHeight
             End With
 
-            'Set series for elev/Prism
-            Dim nrecords As Long = BA_Excel_CountRecords(pAreaElvWorksheet, 2)
+            'Set series for precip/elevation values
+            Dim nrecords As Long = BA_Excel_CountRecords(pPrecipElvWorksheet, 2)
             Dim precipValueRange As String = "A2:A" & nrecords + 2
             Dim xDemValueRange As String = "B2:B" & nrecords + 2
             Dim ser As Series = myChart.SeriesCollection.NewSeries
 
+            'precip/elevation values scatterplot for each cell
             With ser
                 .Name = "AOI"
                 'Set Series Values
-                .Values = pAreaElvWorksheet.Range(precipValueRange)
-                .XValues = pAreaElvWorksheet.Range(xDemValueRange)
+                .Values = pPrecipElvWorksheet.Range(precipValueRange)
+                .XValues = pPrecipElvWorksheet.Range(xDemValueRange)
                 'Set Series Formats
                 .MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStylePlus
                 .MarkerSize = 3
-                '.MarkerForegroundColor = RGB(246, 32, 10)
-                '.MarkerBackgroundColor = RGB(246, 32, 10)
             End With
 
-            '@ToDo: work on formatting trendline
+            'trendline for aoi dataset
             Dim trendlines As Microsoft.Office.Interop.Excel.Trendlines = ser.Trendlines
             Dim trendline As Microsoft.Office.Interop.Excel.Trendline =
                 trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
                 System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
                 True, True, "Linear (AOI)")
-            trendline.DataLabel.Left = trendline.DataLabel.Left - 300
-            trendline.DataLabel.Font.Bold = True
+            With trendline
+                .DataLabel.Left = trendline.DataLabel.Left - 300
+                .DataLabel.Font.Bold = True
+                .Format.Line.Weight = 1.5
+            End With
+
+            'Set series for SNOTEL precip/elevation values
+            nrecords = BA_Excel_CountRecords(pPrecipSNOTELWorksheet, 2)
+            precipValueRange = "C2:C" & nrecords + 2
+            Dim xElevValueRange = "A2:A" & nrecords + 2
+            Dim MarkerColor As Long = RGB(246, 32, 10)
+            Dim ser2 As Series = myChart.SeriesCollection.NewSeries
+            With ser2
+                .Name = "SNOTEL"
+                'Set Series Values
+                .Values = pPrecipSNOTELWorksheet.Range(precipValueRange)
+                .XValues = pPrecipSNOTELWorksheet.Range(xElevValueRange)
+                'Set Series Formats
+                .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleTriangle
+                .MarkerSize = 5
+                .MarkerBackgroundColor = MarkerColor
+                .MarkerForegroundColor = MarkerColor
+            End With
+
+            'Trendline for SNOTEL
+            Dim trendlines2 As Microsoft.Office.Interop.Excel.Trendlines = ser2.Trendlines
+            Dim trendline2 As Microsoft.Office.Interop.Excel.Trendline =
+            trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
+                System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
+                True, True, "Linear (SNOTEL)")
+            With trendline2
+                .DataLabel.Left = trendline2.DataLabel.Left - 200
+                .DataLabel.Top = trendline.DataLabel.Top + 40
+                .DataLabel.Font.Bold = True
+                .DataLabel.Font.Color = MarkerColor
+                .Format.Line.ForeColor.RGB = MarkerColor
+                .Format.Line.Weight = 1.5
+            End With
 
             With myChart
                 'Set Element Positions
