@@ -1975,15 +1975,15 @@ Public Module ExcelModule
                 'Insert Title
                 .HasTitle = True
                 .HasLegend = True
-                .ChartTitle.Caption = "Precipitation Representation Areas"
+                .ChartTitle.Caption = "Elevation Precipitation"
                 'Set Chart Type and Data Range
                 .ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter
 
                 'Set Chart Position
-                .Parent.Left = BA_ChartWidth + BA_ChartSpacing + BA_ChartSpacing
-                .Parent.Width = BA_ChartWidth
-                .Parent.Top = (BA_ChartHeight + BA_ChartSpacing) * 3 + BA_ChartSpacing
-                .Parent.Height = BA_ChartHeight
+                .Parent.Left = BA_ChartSpacing
+                .Parent.Width = 700
+                .Parent.Top = BA_ChartSpacing
+                .Parent.Height = 500
             End With
 
             'Set series for precip/elevation values
@@ -1994,13 +1994,13 @@ Public Module ExcelModule
 
             'precip/elevation values scatterplot for each cell
             With ser
-                .Name = "AOI"
+                .Name = "All DEM cells"
                 'Set Series Values
                 .Values = pPrecipElvWorksheet.Range(precipValueRange)
                 .XValues = pPrecipElvWorksheet.Range(xDemValueRange)
                 'Set Series Formats
-                .MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStylePlus
-                .MarkerSize = 3
+                .MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleDiamond
+                .MarkerSize = 7
             End With
 
             'trendline for aoi dataset
@@ -2008,11 +2008,14 @@ Public Module ExcelModule
             Dim trendline As Microsoft.Office.Interop.Excel.Trendline =
                 trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
                 System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
-                True, True, "Linear (AOI)")
+                True, True, "Linear (All DEM cells)")
+            Dim sitesTrendlineColor As Long = RGB(0, 112, 192)
             With trendline
-                .DataLabel.Left = trendline.DataLabel.Left - 300
-                .DataLabel.Font.Bold = True
+                .DataLabel.Left = trendline.DataLabel.Left + 250
+                .DataLabel.Font.Size = 20
                 .Format.Line.Weight = 1.5
+                .DataLabel.Font.Color = sitesTrendlineColor
+                .Format.Line.ForeColor.RGB = sitesTrendlineColor
             End With
 
             'Set series for SNOTEL precip/elevation values
@@ -2022,13 +2025,13 @@ Public Module ExcelModule
             Dim MarkerColor As Long = RGB(246, 32, 10)
             Dim ser2 As Series = myChart.SeriesCollection.NewSeries
             With ser2
-                .Name = "SNOTEL"
+                .Name = "Sites"
                 'Set Series Values
                 .Values = pPrecipSNOTELWorksheet.Range(precipValueRange)
                 .XValues = pPrecipSNOTELWorksheet.Range(xElevValueRange)
                 'Set Series Formats
-                .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleTriangle
-                .MarkerSize = 5
+                .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleSquare
+                .MarkerSize = 7
                 .MarkerBackgroundColor = MarkerColor
                 .MarkerForegroundColor = MarkerColor
             End With
@@ -2038,20 +2041,21 @@ Public Module ExcelModule
             Dim trendline2 As Microsoft.Office.Interop.Excel.Trendline =
             trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
                 System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
-                True, True, "Linear (SNOTEL)")
+                True, True, "Linear (Sites)")
+            sitesTrendlineColor = RGB(255, 165, 0)
             With trendline2
-                .DataLabel.Left = trendline2.DataLabel.Left - 200
-                .DataLabel.Top = trendline.DataLabel.Top + 40
+                '.DataLabel.Left = trendline2.DataLabel.Left - 200
+                '.DataLabel.Top = trendline.DataLabel.Top + 40
                 .DataLabel.Font.Bold = True
-                .DataLabel.Font.Color = MarkerColor
-                .Format.Line.ForeColor.RGB = MarkerColor
+                .DataLabel.Font.Color = sitesTrendlineColor
+                .Format.Line.ForeColor.RGB = sitesTrendlineColor
                 .Format.Line.Weight = 1.5
             End With
 
             With myChart
                 'Set Element Positions
                 .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
-                .SetElement(MsoChartElementType.msoElementLegendBottom)
+                .SetElement(MsoChartElementType.msoElementLegendRight)
 
                 'Left Side Axis
                 Dim yAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
@@ -2073,7 +2077,6 @@ Public Module ExcelModule
                     .AxisTitle.Orientation = 0
                     '.MaximumScale = "100.1"
                     .MinimumScale = Math.Round(dem_min)
-                    .HasMajorGridlines = True
                 End With
             End With
 
