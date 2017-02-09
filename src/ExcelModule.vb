@@ -1969,6 +1969,8 @@ Public Module ExcelModule
                                                   ByVal dem_min As Double, ByVal precip_min As Double) As BA_ReturnCode
         Try
             Dim myChart As Chart = pChartsWorksheet.Shapes.AddChart.Chart
+            Dim legendTop As Int16 = 25
+            Dim plotWidth As Int16 = 575
             With myChart
                 'Clear Styles
                 .ClearToMatchStyle()
@@ -1981,7 +1983,7 @@ Public Module ExcelModule
 
                 'Set Chart Position
                 .Parent.Left = BA_ChartSpacing
-                .Parent.Width = 700
+                .Parent.Width = 800
                 .Parent.Top = BA_ChartSpacing
                 .Parent.Height = 500
             End With
@@ -2011,7 +2013,8 @@ Public Module ExcelModule
                 True, True, "Linear (All DEM cells)")
             Dim sitesTrendlineColor As Long = RGB(0, 112, 192)
             With trendline
-                .DataLabel.Left = trendline.DataLabel.Left + 250
+                .DataLabel.Left = 710
+                .DataLabel.Top = legendTop + 100
                 .DataLabel.Font.Size = 20
                 .Format.Line.Weight = 1.5
                 .DataLabel.Font.Color = sitesTrendlineColor
@@ -2020,7 +2023,7 @@ Public Module ExcelModule
 
             'Set series for SNOTEL precip/elevation values
             nrecords = BA_Excel_CountRecords(pPrecipSNOTELWorksheet, 2)
-            precipValueRange = "C2:C" & nrecords + 2
+            precipValueRange = "D2:D" & nrecords + 2
             Dim xElevValueRange = "A2:A" & nrecords + 2
             Dim MarkerColor As Long = RGB(246, 32, 10)
             Dim ser2 As Series = myChart.SeriesCollection.NewSeries
@@ -2036,26 +2039,34 @@ Public Module ExcelModule
                 .MarkerForegroundColor = MarkerColor
             End With
 
-            'Trendline for SNOTEL
-            Dim trendlines2 As Microsoft.Office.Interop.Excel.Trendlines = ser2.Trendlines
-            Dim trendline2 As Microsoft.Office.Interop.Excel.Trendline =
-            trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
-                System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
-                True, True, "Linear (Sites)")
-            sitesTrendlineColor = RGB(255, 165, 0)
-            With trendline2
-                '.DataLabel.Left = trendline2.DataLabel.Left - 200
-                '.DataLabel.Top = trendline.DataLabel.Top + 40
-                .DataLabel.Font.Bold = True
-                .DataLabel.Font.Color = sitesTrendlineColor
-                .Format.Line.ForeColor.RGB = sitesTrendlineColor
-                .Format.Line.Weight = 1.5
-            End With
+            'Trendline for sites; if > 1 site
+            If nrecords < 2 Then
+                Dim trendlines2 As Microsoft.Office.Interop.Excel.Trendlines = ser2.Trendlines
+                Dim trendline2 As Microsoft.Office.Interop.Excel.Trendline =
+                trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
+                    System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
+                    True, True, "Linear (Sites)")
+                sitesTrendlineColor = RGB(255, 165, 0)
+                With trendline2
+                    .DataLabel.Left = 710
+                    .DataLabel.Top = legendTop + 180
+                    .DataLabel.Font.Size = 20
+                    .DataLabel.Font.Color = sitesTrendlineColor
+                    .Format.Line.ForeColor.RGB = sitesTrendlineColor
+                    .Format.Line.Weight = 1.5
+                End With
+            Else
+                System.Windows.Forms.MessageBox.Show("Warning: Your sites data did not contain enough sites to generate a trendline!")
+            End If
 
             With myChart
+
                 'Set Element Positions
                 .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
                 .SetElement(MsoChartElementType.msoElementLegendRight)
+                .Legend.Top = legendTop
+                .Legend.Left = plotWidth + 20
+                .PlotArea.Width = plotWidth
 
                 'Left Side Axis
                 Dim yAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
@@ -2088,7 +2099,7 @@ Public Module ExcelModule
     End Function
 
     Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
-                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
+                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
                                           ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
@@ -2101,10 +2112,12 @@ Public Module ExcelModule
             '=============================================
             Dim idxElevExcelCol As Short = 1
             Dim idxNameExcelCol As Short = 2
-            Dim idxPrecipExcelCol As Short = 3
+            Dim idxTypeExcelCol As Short = 3
+            Dim idxPrecipExcelCol As Short = 4
 
             pStelElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
             pStelElvWorksheet.Cells(1, idxNameExcelCol) = "BA_SNAME"
+            pStelElvWorksheet.Cells(1, idxTypeExcelCol) = "BA_STYPE"
             'RASTERVALU after extract values to points
             pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
 
@@ -2114,6 +2127,7 @@ Public Module ExcelModule
                 Dim idxPrecipCol As Short = pFClass.FindField(precipFieldName)
                 Dim idxElevCol As Short = pFClass.FindField(elevFieldName)
                 Dim idxNameCol As Short = pFClass.FindField(nameFieldName)
+                Dim idxTypeCol As Short = pFClass.FindField(typeFieldName)
                 If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 Then
                     pQFilter = New QueryFilter
                     pCursor = pFClass.Search(pQFilter, False)
@@ -2124,6 +2138,7 @@ Public Module ExcelModule
                             pStelElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pFeature.Value(idxPrecipCol))
                             pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol))
                             pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
+                            pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
                             pFeature = pCursor.NextFeature
                             idxRow += 1
                         Loop

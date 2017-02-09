@@ -3137,4 +3137,92 @@ Public Module MapsModule
         End Try
     End Function
 
+    Public Function BA_CreateSitesLayer(ByVal aoiPath As String, ByVal outputLayerName As String, ByVal siteTypeField As String, _
+                                        ByVal snotelSite As String, ByVal snowCourseSite As String) As String
+        Dim layersGdbPath As String = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers, True)
+        Dim hasSnotel As Boolean = BA_File_Exists(layersGdbPath + BA_EnumDescription(MapsFileName.Snotel), WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass)
+        Dim hasSnowCourse As Boolean = BA_File_Exists(layersGdbPath + BA_EnumDescription(MapsFileName.SnowCourse), WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass)
+        Dim pFClass As IFeatureClass = Nothing
+        Dim pCursor As IFeatureCursor = Nothing
+        Dim pCursorScos As IFeatureCursor = Nothing
+        Dim pFeature As IFeature = Nothing
+        Dim pField As IField = New Field
+        Dim pFld As IFieldEdit2 = CType(pField, IFieldEdit2)
+        Try
+            'Append layer type attribute to snotel file
+            pFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers), BA_EnumDescription(MapsFileName.Snotel))
+            If pFClass IsNot Nothing Then
+                Dim idxLayerType As Short = pFClass.FindField(siteTypeField)
+                'Field doesn't exist yet, we need to add it
+                If idxLayerType < 0 Then
+                    pFld.Name_2 = siteTypeField
+                    pFld.Type_2 = esriFieldType.esriFieldTypeString
+                    pFld.Length_2 = 5
+                    pFld.Required_2 = False
+                    ' Add field
+                    pFClass.AddField(pFld)
+                    idxLayerType = pFClass.FindField(siteTypeField)
+                End If
+                pCursor = pFClass.Update(Nothing, False)
+                pFeature = pCursor.NextFeature
+                Do While pFeature IsNot Nothing
+                    pFeature.Value(idxLayerType) = snotelSite
+                    pCursor.UpdateFeature(pFeature)
+                    pFeature = pCursor.NextFeature
+                Loop
+            End If
+            'Append layer type attribute to snotel file
+            pFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers), BA_EnumDescription(MapsFileName.SnowCourse))
+            If pFClass IsNot Nothing Then
+                Dim idxLayerType As Short = pFClass.FindField(siteTypeField)
+                'Field doesn't exist yet, we need to add it
+                If idxLayerType < 0 Then
+                    pFld.Name_2 = siteTypeField
+                    pFld.Type_2 = esriFieldType.esriFieldTypeString
+                    pFld.Length_2 = 5
+                    pFld.Required_2 = False
+                    ' Add field
+                    pFClass.AddField(pFld)
+                    idxLayerType = pFClass.FindField(siteTypeField)
+                End If
+                pCursorScos = pFClass.Update(Nothing, False)
+                pFeature = pCursorScos.NextFeature
+                Do While pFeature IsNot Nothing
+                    pFeature.Value(idxLayerType) = snowCourseSite
+                    pCursorScos.UpdateFeature(pFeature)
+                    pFeature = pCursorScos.NextFeature
+                Loop
+            End If
+            Dim returnPath As String = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Analysis, True) & outputLayerName
+            If hasSnotel And Not hasSnowCourse Then
+                ' No snow course to merge; return path to Snotel layer
+                returnPath = layersGdbPath + BA_EnumDescription(MapsFileName.Snotel)
+            ElseIf Not hasSnotel And hasSnowCourse Then
+                ' No snotel to merge; return path to snow course layer
+                returnPath = layersGdbPath + BA_EnumDescription(MapsFileName.SnowCourse)
+            Else
+                'merge snotel and snow course
+                Dim featuresToMerge As String = layersGdbPath + BA_EnumDescription(MapsFileName.Snotel) + "; " + _
+                                                layersGdbPath + BA_EnumDescription(MapsFileName.SnowCourse)
+                Dim success As BA_ReturnCode = BA_MergeFeatures(featuresToMerge, returnPath, Nothing)
+                If success <> BA_ReturnCode.Success Then
+                    returnPath = Nothing
+                End If
+            End If
+            Return returnPath
+        Catch ex As Exception
+            Debug.Print("BA_CreateSitesLayer Exception: " & ex.Message)
+            Return Nothing
+        Finally
+            pFClass = Nothing
+            pCursor = Nothing
+            pCursorScos = Nothing
+            pField = Nothing
+            pFld = Nothing
+            pFeature = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
 End Module
