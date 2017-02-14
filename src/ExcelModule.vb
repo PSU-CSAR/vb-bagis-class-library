@@ -1913,7 +1913,7 @@ Public Module ExcelModule
     End Function
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                              ByVal elevFieldName As String, ByVal pAreaElvWorksheet As Worksheet, _
+                                              ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal pAreaElvWorksheet As Worksheet, _
                                               ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
@@ -1926,18 +1926,21 @@ Public Module ExcelModule
             '=============================================
             Dim idxPrecipExcelCol As Short = 1
             Dim idxElevExcelCol As Short = 2
+            Dim idxAspectExcelCol As Short = 3
 
             pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
+            pAreaElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
 
             'Open up table with data from sample function
             pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
             If pTable IsNot Nothing Then
                 Dim idxPrecipTableCol As Short = pTable.FindField(precipFieldName)
                 Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
-                If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 Then
+                Dim idxAspectTableCol As Short = pTable.FindField(aspectFieldName)
+                If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 AndAlso idxAspectTableCol > -1 Then
                     pQFilter = New QueryFilter
-                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
+                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null and " + aspectFieldName + " is not null"
                     pCursor = pTable.Search(pQFilter, False)
                     Dim idxRow As Integer = 2
                     If pCursor IsNot Nothing Then
@@ -1945,6 +1948,7 @@ Public Module ExcelModule
                         Do While pRow IsNot Nothing
                             pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
                             pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
+                            pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pRow.Value(idxAspectTableCol))
                             pRow = pCursor.NextRow
                             idxRow += 1
                         Loop
@@ -2040,7 +2044,7 @@ Public Module ExcelModule
             End With
 
             'Trendline for sites; if > 1 site
-            If nrecords < 2 Then
+            If nrecords > 1 Then
                 Dim trendlines2 As Microsoft.Office.Interop.Excel.Trendlines = ser2.Trendlines
                 Dim trendline2 As Microsoft.Office.Interop.Excel.Trendline =
                 trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,

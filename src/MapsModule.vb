@@ -3225,4 +3225,78 @@ Public Module MapsModule
         End Try
     End Function
 
+    'return value:
+    '   -1: error occurred
+    ' otherwise, the value indicate the number of records updated
+    Public Function BA_UpdateTableAttributes(ByVal IntervalList() As BA_IntervalList, ByVal filepath As String, _
+                                             ByVal FileName As String, ByVal updateFieldName As String, ByVal queryFieldName As String, _
+                                             ByVal fieldType As esriFieldType) As BA_ReturnCode
+        'fields to be added
+        'NAME - esriFieldTypeString: for labeling purpose
+        Dim success As BA_ReturnCode = BA_ReturnCode.UnknownError
+
+        'open raster attribute table
+        Dim pTable As ITable
+        Dim pFld As IFieldEdit
+        Dim pCursor As ICursor
+        Dim pRow As IRow
+        Dim pQFilter As IQueryFilter = New QueryFilter
+
+        'add field
+        Try
+            pTable = BA_OpenTableFromGDB(filepath, FileName)
+            If pTable IsNot Nothing Then
+
+                Dim nclass As Integer = UBound(IntervalList)
+
+                'add Name field
+                ' check if field exist
+                Dim FieldIndex As Integer = pTable.FindField(updateFieldName)
+
+                ' Define field type
+                If FieldIndex < 0 Then 'add field
+                    'Define field name
+                    pFld = New Field
+                    pFld.Name_2 = updateFieldName
+                    pFld.Type_2 = esriFieldType.esriFieldTypeString
+                    pFld.Length_2 = BA_NAME_FIELD_WIDTH
+                    pFld.Required_2 = True
+
+                    ' Add field
+                    pTable.AddField(pFld)
+                    FieldIndex = pTable.FindField(updateFieldName)
+                End If
+
+                'update value
+                Dim tempname As String
+                For i = 1 To nclass
+                    pQFilter.WhereClause = queryFieldName & " = " & CLng(IntervalList(i).Value)
+                    pCursor = pTable.Update(pQFilter, False)
+                    pRow = pCursor.NextRow
+
+                    Do While Not pRow Is Nothing
+                        tempname = Trim(IntervalList(i).Name)
+                        If Len(tempname) >= BA_NAME_FIELD_WIDTH Then 'truncate the string if it's longer than the att field width
+                            tempname = Left(tempname, BA_NAME_FIELD_WIDTH - 1)
+                        End If
+                        pRow.Value(FieldIndex) = tempname
+                        pCursor.UpdateRow(pRow)
+                        pRow = pCursor.NextRow
+                    Loop
+                Next
+                success = BA_ReturnCode.Success
+            End If
+            Return success
+        Catch ex As Exception
+            Debug.Print("BA_UpdateTableAttributes Exception: " & ex.Message)
+            Return success
+        Finally
+            pTable = Nothing
+            pQFilter = Nothing
+            pRow = Nothing
+            pCursor = Nothing
+
+        End Try
+    End Function
+
 End Module
