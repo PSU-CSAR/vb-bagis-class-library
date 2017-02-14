@@ -2103,7 +2103,8 @@ Public Module ExcelModule
     End Function
 
     Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
-                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
+                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
+                                          ByVal aspectFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
                                           ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
@@ -2118,12 +2119,14 @@ Public Module ExcelModule
             Dim idxNameExcelCol As Short = 2
             Dim idxTypeExcelCol As Short = 3
             Dim idxPrecipExcelCol As Short = 4
+            Dim idxAspectExcelCol As Short = 5
 
             pStelElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
             pStelElvWorksheet.Cells(1, idxNameExcelCol) = "BA_SNAME"
             pStelElvWorksheet.Cells(1, idxTypeExcelCol) = "BA_STYPE"
             'RASTERVALU after extract values to points
             pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
+            pStelElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
 
             'Open up table with data from sample function
             pFClass = BA_OpenFeatureClassFromGDB(vectorGdbPath, vectorFileName)
@@ -2132,7 +2135,8 @@ Public Module ExcelModule
                 Dim idxElevCol As Short = pFClass.FindField(elevFieldName)
                 Dim idxNameCol As Short = pFClass.FindField(nameFieldName)
                 Dim idxTypeCol As Short = pFClass.FindField(typeFieldName)
-                If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 Then
+                Dim idxAspectCol As Short = pFClass.FindField(aspectFieldName)
+                If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 AndAlso idxAspectCol > -1 Then
                     pQFilter = New QueryFilter
                     pCursor = pFClass.Search(pQFilter, False)
                     Dim idxRow As Integer = 2
@@ -2143,6 +2147,7 @@ Public Module ExcelModule
                             pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol))
                             pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
                             pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
+                            pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
                             pFeature = pCursor.NextFeature
                             idxRow += 1
                         Loop
