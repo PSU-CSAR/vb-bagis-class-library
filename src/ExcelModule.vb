@@ -13,6 +13,7 @@ Public Module ExcelModule
     Public Chart_YMaxScale As Double
     Public Chart_YMinScale As Double
     Public Chart_YMapUnit As Double
+    Private m_unknownValue As String = "Unknown"
 
     'count the number of records in a worksheet based on the values on the first column
     'aspect, slope, snotel, and snow course tables have a beginning_row value of 2
@@ -1914,8 +1915,8 @@ Public Module ExcelModule
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
                                               ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal partitionFieldName As String, _
-                                              ByVal pAreaElvWorksheet As Worksheet, _
-                                              ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
+                                              ByVal pAreaElvWorksheet As Worksheet, ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit, _
+                                              ByVal partitionColName As String) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
         Dim pRow As IRow
@@ -1934,7 +1935,7 @@ Public Module ExcelModule
             pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
             If Not String.IsNullOrEmpty(partitionFieldName) Then
-                pAreaElvWorksheet.Cells(1, idxPartitionExcelCol) = "PARTITION"
+                pAreaElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
             End If
 
             'Open up table with data from sample function
@@ -1948,7 +1949,7 @@ Public Module ExcelModule
                     idxPartitionTableCol = pTable.FindField(partitionFieldName)
                 If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 AndAlso idxAspectTableCol > -1 Then
                     pQFilter = New QueryFilter
-                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null and " + aspectFieldName + " is not null"
+                    pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
                     pCursor = pTable.Search(pQFilter, False)
                     Dim idxRow As Integer = 2
                     If pCursor IsNot Nothing Then
@@ -1956,9 +1957,17 @@ Public Module ExcelModule
                         Do While pRow IsNot Nothing
                             pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
                             pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
-                            pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pRow.Value(idxAspectTableCol))
+                            If IsDBNull(pRow.Value(idxAspectTableCol)) Then
+                                pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = m_unknownValue
+                            Else
+                                pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pRow.Value(idxAspectTableCol))
+                            End If
                             If idxPartitionTableCol > 0 Then
-                                pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pRow.Value(idxPartitionTableCol))
+                                If IsDBNull(pRow.Value(idxPartitionTableCol)) Then
+                                    pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = m_unknownValue
+                                Else
+                                    pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pRow.Value(idxPartitionTableCol))
+                                End If
                             End If
                             pRow = pCursor.NextRow
                             idxRow += 1
@@ -2115,8 +2124,8 @@ Public Module ExcelModule
 
     Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
                                           ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
-                                          ByVal aspectFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
-                                          ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
+                                          ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
+                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
         Dim pFeature As IFeature
@@ -2131,6 +2140,7 @@ Public Module ExcelModule
             Dim idxTypeExcelCol As Short = 3
             Dim idxPrecipExcelCol As Short = 4
             Dim idxAspectExcelCol As Short = 5
+            Dim idxPartitionExcelCol As Short = 6
 
             pStelElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
             pStelElvWorksheet.Cells(1, idxNameExcelCol) = "BA_SNAME"
@@ -2138,6 +2148,7 @@ Public Module ExcelModule
             'RASTERVALU after extract values to points
             pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pStelElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
+            pStelElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
 
             'Open up table with data from sample function
             pFClass = BA_OpenFeatureClassFromGDB(vectorGdbPath, vectorFileName)
@@ -2147,7 +2158,8 @@ Public Module ExcelModule
                 Dim idxNameCol As Short = pFClass.FindField(nameFieldName)
                 Dim idxTypeCol As Short = pFClass.FindField(typeFieldName)
                 Dim idxAspectCol As Short = pFClass.FindField(aspectFieldName)
-                If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 AndAlso idxAspectCol > -1 Then
+                Dim idxPartitionCol As Short = pFClass.FindField(partitionFieldName)
+                If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 Then
                     pQFilter = New QueryFilter
                     pCursor = pFClass.Search(pQFilter, False)
                     Dim idxRow As Integer = 2
@@ -2158,7 +2170,18 @@ Public Module ExcelModule
                             pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol))
                             pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
                             pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
-                            pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
+                            If IsDBNull(pFeature.Value(idxAspectCol)) Then
+                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = m_unknownValue
+                            Else
+                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
+                            End If
+                            If idxPartitionCol > 0 Then
+                                If IsDBNull(pFeature.Value(idxPartitionCol)) Then
+                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = m_unknownValue
+                                Else
+                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pFeature.Value(idxPartitionCol))
+                                End If
+                            End If
                             pFeature = pCursor.NextFeature
                             idxRow += 1
                         Loop
