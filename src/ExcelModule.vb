@@ -1913,7 +1913,8 @@ Public Module ExcelModule
     End Function
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
-                                              ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal pAreaElvWorksheet As Worksheet, _
+                                              ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal partitionFieldName As String, _
+                                              ByVal pAreaElvWorksheet As Worksheet, _
                                               ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
@@ -1927,10 +1928,14 @@ Public Module ExcelModule
             Dim idxPrecipExcelCol As Short = 1
             Dim idxElevExcelCol As Short = 2
             Dim idxAspectExcelCol As Short = 3
+            Dim idxPartitionExcelCol As Short = 4
 
             pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
+            If Not String.IsNullOrEmpty(partitionFieldName) Then
+                pAreaElvWorksheet.Cells(1, idxPartitionExcelCol) = "PARTITION"
+            End If
 
             'Open up table with data from sample function
             pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
@@ -1938,6 +1943,9 @@ Public Module ExcelModule
                 Dim idxPrecipTableCol As Short = pTable.FindField(precipFieldName)
                 Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
                 Dim idxAspectTableCol As Short = pTable.FindField(aspectFieldName)
+                Dim idxPartitionTableCol As Short = -1
+                If Not String.IsNullOrEmpty(partitionFieldName) Then _
+                    idxPartitionTableCol = pTable.FindField(partitionFieldName)
                 If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 AndAlso idxAspectTableCol > -1 Then
                     pQFilter = New QueryFilter
                     pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null and " + aspectFieldName + " is not null"
@@ -1949,6 +1957,9 @@ Public Module ExcelModule
                             pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
                             pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
                             pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pRow.Value(idxAspectTableCol))
+                            If idxPartitionTableCol > 0 Then
+                                pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pRow.Value(idxPartitionTableCol))
+                            End If
                             pRow = pCursor.NextRow
                             idxRow += 1
                         Loop

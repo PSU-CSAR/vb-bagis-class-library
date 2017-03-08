@@ -1451,6 +1451,22 @@ Public Module ToolsModule
         End If
     End Function
 
+    ' Calculate focal statistics with GP
+    Public Function BA_FocalStatistics_CellSize(ByVal inRaster As String, ByVal outRasterDataset As String, _
+                                                ByVal neighborhood As String, ByVal statisticsType As String, _
+                                                ByVal snapRasterPath As String, ByVal cellSize As String) As BA_ReturnCode
+        Dim tool As FocalStatistics = New FocalStatistics
+        tool.in_raster = inRaster
+        tool.out_raster = outRasterDataset
+        tool.neighborhood = neighborhood
+        tool.statistics_type = statisticsType
+        If Execute_GeoprocessingWithCellSize(tool, False, snapRasterPath, cellSize) Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
 End Module
 
 
