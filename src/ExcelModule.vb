@@ -13,7 +13,6 @@ Public Module ExcelModule
     Public Chart_YMaxScale As Double
     Public Chart_YMinScale As Double
     Public Chart_YMapUnit As Double
-    Private m_unknownValue As String = "Unknown"
 
     'count the number of records in a worksheet based on the values on the first column
     'aspect, slope, snotel, and snow course tables have a beginning_row value of 2
@@ -1934,7 +1933,7 @@ Public Module ExcelModule
             pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
-            If Not String.IsNullOrEmpty(partitionFieldName) Then
+            If Not partitionFieldName.Equals(BA_UNKNOWN) Then
                 pAreaElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
             End If
 
@@ -1958,13 +1957,13 @@ Public Module ExcelModule
                             pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
                             pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
                             If IsDBNull(pRow.Value(idxAspectTableCol)) Then
-                                pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = m_unknownValue
+                                pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = BA_UNKNOWN
                             Else
                                 pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pRow.Value(idxAspectTableCol))
                             End If
                             If idxPartitionTableCol > 0 Then
                                 If IsDBNull(pRow.Value(idxPartitionTableCol)) Then
-                                    pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = m_unknownValue
+                                    pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = BA_UNKNOWN
                                 Else
                                     pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pRow.Value(idxPartitionTableCol))
                                 End If
@@ -2148,7 +2147,8 @@ Public Module ExcelModule
             'RASTERVALU after extract values to points
             pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pStelElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
-            pStelElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
+            If Not partitionColName.Equals(BA_UNKNOWN) Then _
+                pStelElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
 
             'Open up table with data from sample function
             pFClass = BA_OpenFeatureClassFromGDB(vectorGdbPath, vectorFileName)
@@ -2171,13 +2171,13 @@ Public Module ExcelModule
                             pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
                             pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
                             If IsDBNull(pFeature.Value(idxAspectCol)) Then
-                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = m_unknownValue
+                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = BA_UNKNOWN
                             Else
                                 pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
                             End If
                             If idxPartitionCol > 0 Then
                                 If IsDBNull(pFeature.Value(idxPartitionCol)) Then
-                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = m_unknownValue
+                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = BA_UNKNOWN
                                 Else
                                     pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pFeature.Value(idxPartitionCol))
                                 End If
