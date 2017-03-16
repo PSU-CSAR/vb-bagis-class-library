@@ -1915,7 +1915,7 @@ Public Module ExcelModule
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
                                               ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal partitionFieldName As String, _
                                               ByVal pAreaElvWorksheet As Worksheet, ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit, _
-                                              ByVal partitionColName As String) As BA_ReturnCode
+                                              ByVal partitionColName As String, ByVal zonesColName As String, ByVal zonesFieldName As String) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
         Dim pRow As IRow
@@ -1928,14 +1928,23 @@ Public Module ExcelModule
             Dim idxPrecipExcelCol As Short = 1
             Dim idxElevExcelCol As Short = 2
             Dim idxAspectExcelCol As Short = 3
-            Dim idxPartitionExcelCol As Short = 4
+            Dim idxPointer As Short = idxAspectExcelCol + 1
+            Dim idxZonesExcelCol As Short = -1
+            Dim idxPartitionExcelCol As Short = -1
+            If Not String.IsNullOrEmpty(zonesColName) Then
+                idxZonesExcelCol = idxPointer
+                idxPointer += 1
+            End If
+            If Not partitionFieldName.Equals(BA_UNKNOWN) Then _
+                idxPartitionExcelCol = idxPointer
 
             pAreaElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxElevExcelCol) = "Elevation (" + BA_EnumDescription(demUnit) + ")"
             pAreaElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
-            If Not partitionFieldName.Equals(BA_UNKNOWN) Then
+            If idxZonesExcelCol > 0 Then _
+                pAreaElvWorksheet.Cells(1, idxZonesExcelCol) = zonesColName
+            If idxPartitionExcelCol > 0 Then _
                 pAreaElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
-            End If
 
             'Open up table with data from sample function
             pTable = BA_OpenTableFromGDB(tableGdbPath, tableFileName)
@@ -1944,8 +1953,12 @@ Public Module ExcelModule
                 Dim idxElevTableCol As Short = pTable.FindField(elevFieldName)
                 Dim idxAspectTableCol As Short = pTable.FindField(aspectFieldName)
                 Dim idxPartitionTableCol As Short = -1
-                If Not String.IsNullOrEmpty(partitionFieldName) Then _
+                If idxPartitionExcelCol > 0 Then _
                     idxPartitionTableCol = pTable.FindField(partitionFieldName)
+                Dim idxZonesTableCol As Short = -1
+                If idxZonesExcelCol > 0 Then _
+                    idxZonesTableCol = pTable.FindField(zonesFieldName)
+
                 If idxPrecipTableCol > -1 AndAlso idxElevTableCol > -1 AndAlso idxAspectTableCol > -1 Then
                     pQFilter = New QueryFilter
                     pQFilter.WhereClause = precipFieldName + " is not null and " + elevFieldName + " is not null"
@@ -1968,6 +1981,14 @@ Public Module ExcelModule
                                     pAreaElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pRow.Value(idxPartitionTableCol))
                                 End If
                             End If
+                            If idxZonesTableCol > 0 Then
+                                If IsDBNull(pRow.Value(idxZonesTableCol)) Then
+                                    pAreaElvWorksheet.Cells(idxRow, idxZonesExcelCol) = BA_UNKNOWN
+                                Else
+                                    pAreaElvWorksheet.Cells(idxRow, idxZonesExcelCol) = Convert.ToString(pRow.Value(idxZonesTableCol))
+                                End If
+                            End If
+
                             pRow = pCursor.NextRow
                             idxRow += 1
                         Loop
@@ -2019,7 +2040,7 @@ Public Module ExcelModule
 
             'precip/elevation values scatterplot for each cell
             With ser
-                .Name = "All DEM cells"
+                .Name = "AOI"
                 'Set Series Values
                 .Values = pPrecipElvWorksheet.Range(precipValueRange)
                 .XValues = pPrecipElvWorksheet.Range(xDemValueRange)
@@ -2033,7 +2054,7 @@ Public Module ExcelModule
             Dim trendline As Microsoft.Office.Interop.Excel.Trendline =
                 trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, System.Type.Missing,
                 System.Type.Missing, System.Type.Missing, System.Type.Missing, System.Type.Missing,
-                True, True, "Linear (All DEM cells)")
+                True, True, "Linear (AOI)")
             Dim sitesTrendlineColor As Long = RGB(0, 112, 192)
             With trendline
                 .DataLabel.Left = 710
@@ -2124,14 +2145,14 @@ Public Module ExcelModule
     Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
                                           ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
                                           ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
-                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String) As BA_ReturnCode
+                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
         Dim pFeature As IFeature
         Dim pQFilter As IQueryFilter = New QueryFilter
 
         Try
-            '=============================================
+            '=============================================zon
             'Create Field Titles
             '=============================================
             Dim idxElevExcelCol As Short = 1
@@ -2139,7 +2160,15 @@ Public Module ExcelModule
             Dim idxTypeExcelCol As Short = 3
             Dim idxPrecipExcelCol As Short = 4
             Dim idxAspectExcelCol As Short = 5
-            Dim idxPartitionExcelCol As Short = 6
+            Dim idxPointer As Short = idxAspectExcelCol + 1
+            Dim idxZonesExcelCol As Short = -1
+            Dim idxPartitionExcelCol As Short = -1
+            If Not String.IsNullOrEmpty(zonesFieldName) Then
+                idxZonesExcelCol = idxPointer
+                idxPointer += 1
+            End If
+            If Not partitionFieldName.Equals(BA_UNKNOWN) Then _
+                idxPartitionExcelCol = idxPointer
 
             pStelElvWorksheet.Cells(1, idxElevExcelCol) = "BA_SELEV"
             pStelElvWorksheet.Cells(1, idxNameExcelCol) = "BA_SNAME"
@@ -2147,7 +2176,9 @@ Public Module ExcelModule
             'RASTERVALU after extract values to points
             pStelElvWorksheet.Cells(1, idxPrecipExcelCol) = "Precipitation (" + BA_EnumDescription(precipUnit) + ")"
             pStelElvWorksheet.Cells(1, idxAspectExcelCol) = "ASPECT"
-            If Not partitionColName.Equals(BA_UNKNOWN) Then _
+            If idxZonesExcelCol > 0 Then _
+                pStelElvWorksheet.Cells(1, idxZonesExcelCol) = zonesFieldName
+            If idxPartitionExcelCol > 0 Then _
                 pStelElvWorksheet.Cells(1, idxPartitionExcelCol) = partitionColName
 
             'Open up table with data from sample function
@@ -2158,7 +2189,13 @@ Public Module ExcelModule
                 Dim idxNameCol As Short = pFClass.FindField(nameFieldName)
                 Dim idxTypeCol As Short = pFClass.FindField(typeFieldName)
                 Dim idxAspectCol As Short = pFClass.FindField(aspectFieldName)
-                Dim idxPartitionCol As Short = pFClass.FindField(partitionFieldName)
+                Dim idxPartitionCol As Short = -1
+                If idxPartitionExcelCol > 0 Then _
+                    idxPartitionCol = pFClass.FindField(partitionFieldName)
+                Dim idxZonesCol As Short = -1
+                If idxZonesExcelCol > 0 Then _
+                    idxZonesCol = pFClass.FindField(zonesFieldName)
+
                 If idxPrecipCol > -1 AndAlso idxElevCol > -1 AndAlso idxNameCol > -1 Then
                     pQFilter = New QueryFilter
                     pCursor = pFClass.Search(pQFilter, False)
@@ -2182,6 +2219,14 @@ Public Module ExcelModule
                                     pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pFeature.Value(idxPartitionCol))
                                 End If
                             End If
+                            If idxZonesCol > 0 Then
+                                If IsDBNull(pFeature.Value(idxZonesCol)) Then
+                                    pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = BA_UNKNOWN
+                                Else
+                                    pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = Convert.ToString(pFeature.Value(idxZonesCol))
+                                End If
+                            End If
+
                             pFeature = pCursor.NextFeature
                             idxRow += 1
                         Loop

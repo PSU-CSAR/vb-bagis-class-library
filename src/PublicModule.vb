@@ -2392,4 +2392,37 @@ Optional ByVal hasPaddingBackSlach As Boolean = False) As String
         End Try
     End Function
 
+    'Deletes a field from a table if it exists
+    'The feature class can be from a file geodatabase or a shapefile
+    Public Function BA_DeleteFieldFromTable(ByVal folderPath As String, ByVal fileName As String, _
+                                            ByVal fieldName As String) As BA_ReturnCode
+        Dim pTable As ITable
+        Dim delField As IField
+        Try
+            Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(folderPath)
+            If workspaceType = BAGIS_ClassLibrary.WorkspaceType.Geodatabase Then
+                pTable = BA_OpenTableFromGDB(folderPath, fileName)
+            Else
+                pTable = BA_OpenTableFromFile(folderPath, fileName)
+            End If
+            If pTable IsNot Nothing Then
+                Dim idxDelete As Integer = pTable.FindField(fieldName)
+                If idxDelete > -1 Then
+                    delField = pTable.Fields.Field(idxDelete)
+                    pTable.DeleteField(delField)
+                    Return BA_ReturnCode.Success
+                End If
+            End If
+            Return BA_ReturnCode.UnknownError
+        Catch ex As Exception
+            Debug.Print("BA_DeleteFieldFromFeatureClass Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pTable = Nothing
+            delField = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
 End Module
