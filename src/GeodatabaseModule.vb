@@ -1896,4 +1896,45 @@ Public Module GeodatabaseModule
         End Try
     End Function
 
+    'Deletes features when supplied with a select query
+    'If > 1 feature deleted returns success
+    Public Function BA_DeleteFeatures(ByVal pFolder As String, ByVal pFile As String, ByVal selectQuery As String) As BA_ReturnCode
+        Dim pGeoDataSet As IGeoDataset = Nothing
+        Dim pFeatureClass As IFeatureClass = Nothing
+        Dim pFeatureCursor As IFeatureCursor = Nothing
+        Dim pFeature As IFeature = Nothing
+        Dim pQueryFilter As IQueryFilter = New QueryFilterClass()
+        Dim deleteFeatureCount As Int32 = 0
+        Try
+            pGeoDataSet = BA_OpenFeatureClassFromGDB(pFolder, pFile)
+            If pGeoDataSet IsNot Nothing Then
+                pFeatureClass = CType(pGeoDataSet, IFeatureClass)
+                pQueryFilter.WhereClause = selectQuery
+                pFeatureCursor = pFeatureClass.Update(pQueryFilter, False)
+                pFeature = pFeatureCursor.NextFeature
+                Do While pFeature IsNot Nothing
+                    pFeature.Delete()
+                    pFeature = pFeatureCursor.NextFeature
+                    deleteFeatureCount += 1
+                Loop
+            End If
+            If deleteFeatureCount > 0 Then
+                Return BA_ReturnCode.Success
+            Else
+                Return BA_ReturnCode.UnknownError
+            End If
+        Catch ex As Exception
+            Debug.Print("BA_DeleteFeatures Exception: " & ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pGeoDataSet = Nothing
+            pFeatureClass = Nothing
+            pFeatureCursor = Nothing
+            pFeature = Nothing
+            pQueryFilter = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
 End Module

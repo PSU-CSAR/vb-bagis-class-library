@@ -1467,6 +1467,29 @@ Public Module ToolsModule
         End If
     End Function
 
+    Public Function BA_Union(ByVal inputFeatures As String, ByVal outputFeatures As String) As BA_ReturnCode
+        Dim tool As Union = New Union()
+        tool.in_features = inputFeatures
+        tool.out_feature_class = outputFeatures
+        tool.join_attributes = "ALL"
+        'No snapRasterPath because not a spatial analyst tool
+        If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
+    Public Function BA_EuclideanDistance(ByVal inputFeatures As String, ByVal outRaster As String, ByVal cellSize As String, _
+                                         ByVal maskPath As String, ByVal snapRasterPath As String) As BA_ReturnCode
+        Dim tool As EucDistance = New EucDistance()
+        tool.in_source_data = inputFeatures
+        tool.out_distance_raster = outRaster
+        tool.cell_size = cellSize
+        'No snapRasterPath because not a spatial analyst tool
+        Return Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
+    End Function
+
 End Module
 
 
