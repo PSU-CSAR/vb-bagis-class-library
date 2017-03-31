@@ -1520,15 +1520,17 @@ Public Module GeodatabaseModule
         Dim inputGeodataset As IGeoDataset = Nothing
         Dim pRasterDataset As IRasterDataset3 = Nothing
         Dim isNullGeodataset As IGeoDataset = Nothing
-        Dim outputGeodataset As IGeoDataset = Nothing
         Dim maskFeatureClass As IFeatureClass = Nothing
         Dim maskGeodataset As IGeoDataset = Nothing
         Dim workspaceFactory As IWorkspaceFactory = New FileGDBWorkspaceFactory()
         Dim workspace As IWorkspace = Nothing
         Dim pEnv As IRasterAnalysisEnvironment = Nothing
-        Dim retVal As BA_ReturnCode = BA_ReturnCode.UnknownError
+        Dim success As BA_ReturnCode = BA_ReturnCode.UnknownError
 
         Try
+            If BA_File_Exists(outputFolder + "\" + outputFile, WorkspaceType.Geodatabase, esriDatasetType.esriDTRasterDataset) Then
+                Dim retVal As Short = BA_RemoveRasterFromGDB(outputFolder, outputFile)
+            End If
             inputGeodataset = BA_OpenRasterFromGDB(inputFolder, inputFile)
             If inputGeodataset IsNot Nothing Then
                 pRasterDataset = CType(inputGeodataset, IRasterDataset3) ' Explicit cast
@@ -1549,23 +1551,21 @@ Public Module GeodatabaseModule
                 isNullGeodataset = mapAlgebraOp.Execute("SetNull([noData1]" & whereClause & ",[noData1])")
                 If isNullGeodataset IsNot Nothing Then
                     BA_SaveRasterDatasetGDB(isNullGeodataset, outputFolder, BA_RASTER_FORMAT, outputFile)
-                    retVal = BA_ReturnCode.Success
+                    success = BA_ReturnCode.Success
                 End If
             End If
-            Return retVal
+            Return success
         Catch ex As Exception
             MsgBox("BA_ReplaceNoDataCellsGDB Exception: " & ex.Message)
-            Return retVal
+            Return success
         Finally
             mapAlgebraOp.UnbindRaster("noData1")
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pEnv)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(maskGeodataset)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(maskFeatureClass)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(outputGeodataset)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(isNullGeodataset)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(inputGeodataset)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(workspace)
-            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(mapAlgebraOp)
+            inputGeodataset = Nothing
+            pRasterDataset = Nothing
+            isNullGeodataset = Nothing
+            workspace = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
         End Try
 
     End Function

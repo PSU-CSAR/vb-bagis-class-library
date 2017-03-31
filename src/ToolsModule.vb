@@ -1490,6 +1490,29 @@ Public Module ToolsModule
         Return Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
     End Function
 
+    Public Function BA_RasterCalculator(ByVal outputRasterPath As String, ByVal expression As String, ByVal snapRasterPath As String,
+                                        ByVal maskPath As String)
+        Dim tool As RasterCalculator = New RasterCalculator()
+        tool.output_raster = outputRasterPath
+        tool.expression = expression
+        'No snapRasterPath because not a spatial analyst tool
+        Return Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
+    End Function
+
+    Public Function BA_RasterToPoint(ByVal inputRasterPath As String, ByVal outFeaturePath As String, _
+                                     ByVal aField As String)
+        Dim tool As RasterToPoint = New RasterToPoint()
+        tool.in_raster = inputRasterPath
+        tool.out_point_features = outFeaturePath
+        tool.raster_field = aField
+        'No snapRasterPath because not a spatial analyst tool
+        If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
 End Module
 
 
