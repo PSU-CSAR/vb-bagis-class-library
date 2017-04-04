@@ -295,6 +295,9 @@ Public Module MapsModule
                     Case MapsDisplayStyle.FilledDem '"Filled DEM"
                         StyleName = "Elevation #1"
                         StyleCategory = "Default Ramps"
+                    Case MapsDisplayStyle.Cyan_Light_to_Blue_Dark 'Pseudo-site base
+                        StyleName = "Cyan-Light to Blue-Dark"
+                        StyleCategory = "Default Ramps"
                     Case Else
                         StyleName = "Black to White"
                         StyleCategory = "Default Ramps"
@@ -2621,7 +2624,7 @@ Public Module MapsModule
     'remove background layers from the map legend
     'also set the format of the legend
     Public Sub BA_RemoveLayersfromLegend(ByVal pMxDoc As IMxDocument)
-        Dim LayerCount As Integer = 11
+        Dim LayerCount As Integer = 12
         Dim LayerNames() As String
         'layers to be removed are:
         ReDim LayerNames(0 To LayerCount)
@@ -2636,6 +2639,7 @@ Public Module MapsModule
         LayerNames(9) = BA_MAPS_PSEUDO_SCENARIO2
         LayerNames(10) = BA_MAPS_FILLED_DEM
         LayerNames(11) = BA_MAPS_NOT_REPRESENTED
+        LayerNames(11) = BA_MAPS_PS_INCLUDE
 
         'Set the page layout.
         Dim pPageLayout As IPageLayout = pMxDoc.PageLayout
