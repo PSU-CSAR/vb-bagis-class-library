@@ -300,11 +300,21 @@ Public Module WebservicesModule
             Dim yRows As Long = -1
             Dim cellSize As Double = BA_CellSizeImageService(webServiceUrl)
             BA_GetColumnRowCountFromVector(clipFilePath, cellSize, cellSize, extent, xCols, yRows)
+            Dim newExtent As IEnvelope = extent
+
+            'Reset extent to accomodate cell size
+            Dim aPoint As IPnt = imageRasterProps.MeanCellSize
+            newExtent.xmin = imageRasterProps.Extent.XMin + Math.Truncate((extent.XMin - imageRasterProps.Extent.XMin) / aPoint.X) * aPoint.X
+            newExtent.ymin = imageRasterProps.Extent.YMin + Math.Truncate((extent.YMin - imageRasterProps.Extent.YMin) / aPoint.Y) * aPoint.Y
+            newExtent.xmax = newExtent.xmin + aPoint.X * xCols
+            newExtent.ymax = newExtent.ymin + aPoint.Y * yRows
 
             '@ToDo: May need to worry about the projection in real-life
-            imageRasterProps.Extent = extent
+            imageRasterProps.Extent = newExtent
             imageRasterProps.Width = xCols
             imageRasterProps.Height = yRows
+
+            aPoint = imageRasterProps.MeanCellSize
 
             'Save the clipped raster to the file geodatabase.
             Dim newFolder As String = "PleaseReturn"

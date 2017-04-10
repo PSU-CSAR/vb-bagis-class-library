@@ -1914,7 +1914,8 @@ Public Module ExcelModule
 
     Public Function BA_CreateRepresentPrecipTable(ByVal tableGdbPath As String, ByVal tableFileName As String, ByVal precipFieldName As String, _
                                               ByVal elevFieldName As String, ByVal aspectFieldName As String, ByVal partitionFieldName As String, _
-                                              ByVal pAreaElvWorksheet As Worksheet, ByVal demUnit As MeasurementUnit, ByVal precipUnit As MeasurementUnit, _
+                                              ByVal pAreaElvWorksheet As Worksheet, ByVal demUnit As MeasurementUnit, ByVal demConversionFactor As Double, _
+                                              ByVal precipUnit As MeasurementUnit, _
                                               ByVal partitionColName As String, ByVal zonesColName As String, ByVal zonesFieldName As String) As BA_ReturnCode
         Dim pTable As ITable = Nothing
         Dim pCursor As ICursor
@@ -1968,7 +1969,7 @@ Public Module ExcelModule
                         pRow = pCursor.NextRow
                         Do While pRow IsNot Nothing
                             pAreaElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pRow.Value(idxPrecipTableCol))
-                            pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol))
+                            pAreaElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pRow.Value(idxElevTableCol)) * demConversionFactor
                             If IsDBNull(pRow.Value(idxAspectTableCol)) Then
                                 pAreaElvWorksheet.Cells(idxRow, idxAspectExcelCol) = BA_UNKNOWN
                             Else
@@ -2145,7 +2146,8 @@ Public Module ExcelModule
     Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
                                           ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
                                           ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
-                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String) As BA_ReturnCode
+                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String, _
+                                          ByVal demConversionFactor As Double) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
         Dim pFeature As IFeature
@@ -2204,7 +2206,7 @@ Public Module ExcelModule
                         pFeature = pCursor.NextFeature
                         Do While pFeature IsNot Nothing
                             pStelElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pFeature.Value(idxPrecipCol))
-                            pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol))
+                            pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol)) * demConversionFactor
                             pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
                             pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
                             If IsDBNull(pFeature.Value(idxAspectCol)) Then
