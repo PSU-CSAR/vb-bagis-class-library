@@ -1500,11 +1500,25 @@ Public Module ToolsModule
     End Function
 
     Public Function BA_RasterToPoint(ByVal inputRasterPath As String, ByVal outFeaturePath As String, _
-                                     ByVal aField As String)
+                                     ByVal aField As String) As BA_ReturnCode
         Dim tool As RasterToPoint = New RasterToPoint()
         tool.in_raster = inputRasterPath
         tool.out_point_features = outFeaturePath
         tool.raster_field = aField
+        'No snapRasterPath because not a spatial analyst tool
+        If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+            Return BA_ReturnCode.Success
+        Else
+            Return BA_ReturnCode.UnknownError
+        End If
+    End Function
+
+    Public Function BA_Buffer(ByVal inputFeaturesPath As String, ByVal outFeaturesPath As String, _
+                              ByVal strDistance As String) As BA_ReturnCode
+        Dim tool As Buffer = New Buffer()
+        tool.in_features = inputFeaturesPath
+        tool.out_feature_class = outFeaturesPath
+        tool.buffer_distance_or_field = strDistance
         'No snapRasterPath because not a spatial analyst tool
         If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
             Return BA_ReturnCode.Success
