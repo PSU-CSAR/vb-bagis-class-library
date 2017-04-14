@@ -109,9 +109,11 @@
     Public Const BA_MAPS_PSEUDO_SCENARIO2 = "Pseudo Site Scenario 2"
     Public Const BA_MAPS_FILLED_DEM = "Filled DEM"
     Public Const BA_MAPS_NOT_REPRESENTED = "Not Represented"
-    Public Const BA_MAPS_PS_REPRESENTED = "Excluded Represented Area"
-    Public Const BA_MAPS_PS_ELEVATION = "Excluded Elevation"
+    Public Const BA_MAPS_PS_REPRESENTED = "Represented Area"
+    Public Const BA_MAPS_PS_ELEVATION = "Area excluded by Elevation"
     Public Const BA_MAPS_PS_INCLUDE = "Desired Area"
+    Public Const BA_MAPS_PS_INDICATOR = "New Pseudo Site Indicator"
+    Public Const BA_MAPS_PS_PROXIMITY = "Area excluded by Proximity"
 
     'these constants are used to ID whether a folder is a basin or an AOI or both
     Public Const BA_BASIN_DEM_EXTENT_SHAPEFILE As String = "aoi_v" 'vector

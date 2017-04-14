@@ -2624,7 +2624,7 @@ Public Module MapsModule
     'remove background layers from the map legend
     'also set the format of the legend
     Public Sub BA_RemoveLayersfromLegend(ByVal pMxDoc As IMxDocument)
-        Dim LayerCount As Integer = 12
+        Dim LayerCount As Integer = 13
         Dim LayerNames() As String
         'layers to be removed are:
         ReDim LayerNames(0 To LayerCount)
@@ -2639,7 +2639,8 @@ Public Module MapsModule
         LayerNames(9) = BA_MAPS_PSEUDO_SCENARIO2
         LayerNames(10) = BA_MAPS_FILLED_DEM
         LayerNames(11) = BA_MAPS_NOT_REPRESENTED
-        LayerNames(11) = BA_MAPS_PS_INCLUDE
+        LayerNames(12) = BA_MAPS_PS_INCLUDE
+        LayerNames(13) = BA_MAPS_PS_INDICATOR
 
         'Set the page layout.
         Dim pPageLayout As IPageLayout = pMxDoc.PageLayout
