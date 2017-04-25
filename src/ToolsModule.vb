@@ -1527,6 +1527,19 @@ Public Module ToolsModule
         End If
     End Function
 
+    Public Function BA_AppendFeatures(ByVal inFeatures As String, ByVal targetFeatures As String) As BA_ReturnCode
+        Dim tool As Append = New Append
+        Try
+            tool.inputs = inFeatures
+            tool.target = targetFeatures
+            Execute_Geoprocessing(tool, False, Nothing)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_AppendFeatures Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
 End Module
 
 
