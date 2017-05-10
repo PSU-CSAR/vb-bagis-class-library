@@ -114,6 +114,7 @@
     Public Const BA_MAPS_PS_INCLUDE = "Desired Area"
     Public Const BA_MAPS_PS_INDICATOR = "New Pseudo Site Indicator"
     Public Const BA_MAPS_PS_PROXIMITY = "Area excluded by Proximity"
+    Public Const BA_MAPS_PS_PRECIPITATION = "Area excluded by Precipitation"
 
     'these constants are used to ID whether a folder is a basin or an AOI or both
     Public Const BA_BASIN_DEM_EXTENT_SHAPEFILE As String = "aoi_v" 'vector

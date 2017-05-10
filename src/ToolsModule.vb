@@ -1314,6 +1314,26 @@ Public Module ToolsModule
         End Try
     End Function
 
+    Public Function BA_ReclassifyRasterFromStringWithMask(ByVal inputFolderPath As String, ByVal reclassField As String, _
+                                                          ByVal reclassString As String, ByVal outputFolderPath As String, _
+                                                          ByVal snapRasterPath As String, ByVal maskPath As String) As BA_ReturnCode
+        Dim tool As Reclassify = New Reclassify
+        Try
+            tool.in_raster = inputFolderPath
+            tool.reclass_field = reclassField
+            tool.out_raster = outputFolderPath
+            tool.remap = reclassString
+            Execute_Geoprocessing(tool, False, snapRasterPath)
+            Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_ReclassifyRasterFromString Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(tool)
+        End Try
+    End Function
+
     Public Function BA_MergeFeatures(ByVal inFeatures As String, ByVal outputFolderPath As String, _
                                      ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Merge = New Merge
