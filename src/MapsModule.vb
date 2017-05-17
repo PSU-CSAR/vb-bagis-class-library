@@ -986,14 +986,7 @@ Public Module MapsModule
 
         If String.IsNullOrEmpty(aoipathname) Then Exit Sub
 
-        Dim pMap As IMap = pmxDoc.Maps.Item(0)
-
-        If pMap.Name = BA_MAPS_DEFAULT_MAP_NAME Then
-            pmxDoc.ActiveView = pMap
-        Else
-            MsgBox("Cannot find the default mapframe: " & BA_MAPS_DEFAULT_MAP_NAME & "!")
-            Exit Sub
-        End If
+        BA_SetDefaultMapFrameName(BA_MAPS_DEFAULT_MAP_NAME, pmxDoc)
 
         pEnv = BA_GetBasinEnvelope(aoipathname)
         pmxDoc.ActiveView.Extent = pEnv
@@ -3370,6 +3363,65 @@ Public Module MapsModule
             pCursor = Nothing
 
         End Try
+    End Function
+
+    Public Function BA_SetDefaultMapFrameName(ByVal mapname As String, ByVal pmxDoc As IMxDocument) As Integer
+        Dim return_value As Integer
+        Dim response As Integer
+
+        Dim pMap As IMap
+
+        return_value = 0
+        response = BA_ActivateMapFrame(mapname, pmxDoc)
+        If response < 0 Then 'mapname map frame does not exist
+            pMap = pmxDoc.FocusMap
+
+            pMap.Name = mapname
+            pmxDoc.UpdateContents()
+            pmxDoc.ActivatedView.PartialRefresh(esriViewDrawPhase.esriViewGeography, Nothing, Nothing)
+            return_value = 1
+        End If
+
+        Return return_value
+    End Function
+
+    'activate a map frame by its name
+    'return values: 0, map is already activated, nothing happened
+    '               1, map is activated
+    '               -1, error
+    Public Function BA_ActivateMapFrame(ByVal mapname As String, ByVal pmxDoc As IMxDocument) As Integer
+        Dim return_value As Integer
+        return_value = -1
+
+        Dim pMap As IMap
+        Dim pMaps As IMaps
+ 
+        pMaps = pmxDoc.Maps
+        pMap = pmxDoc.FocusMap
+
+        Dim activatemapframe As String
+        Dim i As Integer
+        activatemapframe = pMap.Name
+
+        If activatemapframe = mapname Then 'do nothing
+            return_value = 0
+        End If
+
+        If return_value < 0 Then 'the targeted mapframe is not currently activated
+            For i = 1 To pMaps.Count
+                pMap = pMaps.Item(i - 1)
+                If pMap.Name = mapname Then 'data frame exists
+                    pmxDoc.ActiveView = pMap
+                    pmxDoc.ActiveView.Refresh()
+                    return_value = 1
+                    Exit For
+                End If
+            Next
+        End If
+
+        pMap = Nothing
+        pMaps = Nothing
+        Return return_value
     End Function
 
 End Module
