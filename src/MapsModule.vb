@@ -973,8 +973,10 @@ Public Module MapsModule
             If Not TypeOf pActiveView Is IPageLayout Then 'switch to layout view
                 pmxDoc.ActiveView = pmxDoc.PageLayout
                 pmxDoc.PageLayout.ZoomToWhole()
-                pmxDoc.ActiveView.Refresh()
+            Else
+                pmxDoc.PageLayout.ZoomToWhole()
             End If
+            pmxDoc.ActiveView.Refresh()
         End If
     End Sub
 
@@ -986,7 +988,14 @@ Public Module MapsModule
 
         If String.IsNullOrEmpty(aoipathname) Then Exit Sub
 
-        BA_SetDefaultMapFrameName(BA_MAPS_DEFAULT_MAP_NAME, pmxDoc)
+        Dim pMap As IMap = pmxDoc.Maps.Item(0)
+
+        If pMap.Name = BA_MAPS_DEFAULT_MAP_NAME Then
+            pmxDoc.ActiveView = pMap
+        Else
+            MsgBox("Cannot find the default mapframe: " & BA_MAPS_DEFAULT_MAP_NAME & "!")
+            Exit Sub
+        End If
 
         pEnv = BA_GetBasinEnvelope(aoipathname)
         pmxDoc.ActiveView.Extent = pEnv
@@ -2280,167 +2289,6 @@ Public Module MapsModule
             pElement = Nothing
         End Try
     End Sub
-
-    'map type:
-    '1. Elevation Distribution
-    '2. Elevation SNOTEL
-    '3. Elevation Snow Course
-    '4. Precipitation Distribution
-    '5. Aspect Distribution
-    Public Function BA_DisplayMap(ByVal pMxDocument As IMxDocument, ByVal maptype As Integer, ByVal selectedBasin As String, ByVal selectedAoi As String, _
-                                  ByVal displayElevationInMeters As Boolean, ByVal subTitle As String) As Integer
-        Dim LayerNames() As String
-        Dim response As Integer
-        Dim maptitle As String
-        Dim KeyLayerName As String = Nothing
-        Dim UnitText As String
-        'Participated layers
-        'Public Const BA_MapAOI = "AOI Boundary"
-        'Public Const BA_MapElevationZone = "Elevation Zones"
-        'Public Const BA_MapSNOTELZone = "SNOTEL Elevation Zones"
-        'Public Const BA_MapSNOTELSite = "SNOTEL Sites"
-        'Public Const BA_MapSnowCourseZone = "Snow Course Elevation Zones"
-        'Public Const BA_MapSnowCourseSite = "Snow Courses"
-        'Public Const BA_MapPrecipZone = "Precipitation Zones"
-        'Public Const BA_MapHillshade = "Hillshade"
-        'Public Const BA_MapStream = "AOI Streams"
-        'Public Const BA_MapAspect = "Aspect"
-        'Public Const BA_MapSlope = "Slope"
-        Dim Basin_Name As String
-
-        If Len(Trim(selectedBasin)) = 0 Then
-            Basin_Name = ""
-        Else
-            Basin_Name = vbCrLf & " at " & selectedBasin
-        End If
-
-        maptitle = selectedAoi & Basin_Name
-
-        Select Case maptype
-            Case 1 'elevation distribution
-                ReDim LayerNames(0 To 6)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_ELEVATION_ZONES
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                LayerNames(6) = BA_MAPS_SNOW_COURSE_SITES
-                KeyLayerName = BA_MAPS_ELEVATION_ZONES
-                If displayElevationInMeters = True Then
-                    UnitText = "Elevation Units = Meters"
-                Else
-                    UnitText = "Elevation Units = Feet"
-                End If
-            Case 2 'elevation snotel
-                ReDim LayerNames(0 To 5)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_SNOTEL_ZONES
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                KeyLayerName = BA_MAPS_SNOTEL_ZONES
-                UnitText = "Area Represented = elevation zone" & vbCrLf & "between named site and next site below"
-            Case 3 'elevation snow course
-                ReDim LayerNames(0 To 5)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_SNOW_COURSE_ZONES
-                LayerNames(5) = BA_MAPS_SNOW_COURSE_SITES
-                KeyLayerName = BA_MAPS_SNOW_COURSE_ZONES
-                UnitText = "Area Represented = elevation zone" & vbCrLf & "between named site and next site below"
-            Case 4 'precipitation distribution
-                ReDim LayerNames(0 To 6)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_SNOTEL_SITES
-                LayerNames(5) = BA_MAPS_SNOW_COURSE_SITES
-                LayerNames(6) = BA_MAPS_PRECIPITATION_ZONES
-                KeyLayerName = BA_MAPS_PRECIPITATION_ZONES
-                UnitText = "Precipitation Units = Inches"
-            Case 5 'aspect
-                ReDim LayerNames(0 To 6)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_ASPECT
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                LayerNames(6) = BA_MAPS_SNOW_COURSE_SITES
-                KeyLayerName = BA_MAPS_ASPECT
-                UnitText = " "
-            Case 6 'slope
-                ReDim LayerNames(0 To 6)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_SLOPE
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                LayerNames(6) = BA_MAPS_SNOW_COURSE_SITES
-                KeyLayerName = BA_MAPS_SLOPE
-                UnitText = " "
-            Case 7 'Scenario 1
-                ReDim LayerNames(0 To 11)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_ELEVATION_ZONES
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                LayerNames(6) = BA_MAPS_SNOTEL_SCENARIO1
-                LayerNames(7) = BA_MAPS_SNOW_COURSE_SCENARIO1
-                LayerNames(8) = BA_MAPS_PSEUDO_SCENARIO1
-                LayerNames(9) = BA_MAPS_SNOW_COURSE_SITES
-                LayerNames(10) = BA_MAPS_PSEUDO_SITES
-                LayerNames(11) = BA_MAPS_SCENARIO1_REPRESENTATION
-                'KeyLayerName = BA_MAPS_SCENARIO1_REPRESENTATION
-                UnitText = "Scenario 1 sites are circled in black"
-            Case 8 'Scenario 2
-                ReDim LayerNames(0 To 11)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_ELEVATION_ZONES
-                LayerNames(5) = BA_MAPS_SNOTEL_SITES
-                LayerNames(6) = BA_MAPS_SNOTEL_SCENARIO2
-                LayerNames(7) = BA_MAPS_SNOW_COURSE_SCENARIO2
-                LayerNames(8) = BA_MAPS_PSEUDO_SCENARIO2
-                LayerNames(9) = BA_MAPS_SNOW_COURSE_SITES
-                LayerNames(10) = BA_MAPS_PSEUDO_SITES
-                LayerNames(11) = BA_MAPS_SCENARIO2_REPRESENTATION
-                'KeyLayerName = BA_MAPS_SCENARIO2_REPRESENTATION
-                UnitText = "Scenario 2 sites are circled in gold"
-            Case 9 'Difference of Representations
-                ReDim LayerNames(0 To 16)
-                LayerNames(1) = BA_MAPS_AOI_BOUNDARY
-                LayerNames(2) = BA_MAPS_STREAMS
-                LayerNames(3) = BA_MAPS_HILLSHADE
-                LayerNames(4) = BA_MAPS_SNOTEL_SITES
-                LayerNames(5) = BA_MAPS_SNOTEL_SCENARIO1
-                LayerNames(6) = BA_MAPS_SNOTEL_SCENARIO2
-                LayerNames(7) = BA_MAPS_SNOW_COURSE_SCENARIO1
-                LayerNames(8) = BA_MAPS_SNOW_COURSE_SCENARIO2
-                LayerNames(9) = BA_MAPS_PSEUDO_SCENARIO1
-                LayerNames(10) = BA_MAPS_PSEUDO_SCENARIO2
-                LayerNames(11) = BA_MAPS_SNOW_COURSE_SITES
-                LayerNames(12) = BA_MAPS_PSEUDO_SITES
-                LayerNames(13) = BA_MAPS_SCENARIO1_REPRESENTATION
-                LayerNames(14) = BA_MAPS_SCENARIO2_REPRESENTATION
-                LayerNames(15) = BA_MAPS_BOTH_REPRESENTATION
-                LayerNames(16) = BA_MAPS_NOT_REPRESENTED
-                KeyLayerName = Nothing
-                UnitText = "Scenario 1 and scenario 2 sites are circled" & vbCrLf & "in black and gold respectively"
-            Case Else
-                MsgBox(maptype & " is not a valid option!")
-                Return -1
-        End Select
-        'convert subtitle to uppercase
-        BA_MapUpdateSubTitle(pMxDocument, maptitle, subTitle.ToUpper, UnitText)
-        response = BA_ToggleLayersinMapFrame(pMxDocument, LayerNames)
-        'BA_ZoomToAOI (AOIFolderBase) 'zoom to current AOI
-        BA_ToggleView(pMxDocument, False) 'switch to the may layout view
-        BA_SetLegendFormat(pMxDocument, KeyLayerName)
-        Return 1
-    End Function
 
     Public Sub BA_MapUpdateSubTitle(ByVal pMxDoc As IMxDocument, ByVal TitleText As String, ByVal subtitletext As String, ByVal textboxtext As String)
         'Set the page layout.
