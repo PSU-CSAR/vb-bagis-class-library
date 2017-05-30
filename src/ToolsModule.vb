@@ -1514,11 +1514,14 @@ Public Module ToolsModule
     End Function
 
     Public Function BA_Buffer(ByVal inputFeaturesPath As String, ByVal outFeaturesPath As String, _
-                              ByVal strDistance As String) As BA_ReturnCode
+                              ByVal strDistance As String, ByVal strDissolveOption As String) As BA_ReturnCode
         Dim tool As Buffer = New Buffer()
         tool.in_features = inputFeaturesPath
         tool.out_feature_class = outFeaturesPath
         tool.buffer_distance_or_field = strDistance
+        If Not String.IsNullOrEmpty(strDissolveOption) Then
+            tool.dissolve_option = strDissolveOption
+        End If
         'No snapRasterPath because not a spatial analyst tool
         If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
             Return BA_ReturnCode.Success
