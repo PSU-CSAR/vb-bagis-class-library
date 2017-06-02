@@ -371,9 +371,9 @@ Public Module MapsModule
                 Next
 
                 pMxDoc.AddLayer(pRLayer)
-                pMxDoc.UpdateContents()
+                'pMxDoc.UpdateContents()
                 'refresh the active view
-                pMxDoc.ActivatedView.PartialRefresh(esriViewDrawPhase.esriViewGeography, Nothing, Nothing)
+                'pMxDoc.ActivatedView.PartialRefresh(esriViewDrawPhase.esriViewGeography, Nothing, Nothing)
             Else
                 Return -1
             End If
@@ -629,8 +629,8 @@ Public Module MapsModule
 
                 'refresh the active view
                 pMxDoc.AddLayer(pRLayer)
-                pMxDoc.UpdateContents()
-                pMxDoc.ActivatedView.Refresh()
+                'pMxDoc.UpdateContents()
+                'pMxDoc.ActivatedView.Refresh()
                 Return 0
             Else
                 Return -1
@@ -763,8 +763,8 @@ Public Module MapsModule
             pMap.AddLayer(pFLayer)
 
             'refresh the active view
-            pMxDoc.ActivatedView.PartialRefresh(esriViewDrawPhase.esriViewForeground, Nothing, Nothing)
-            pMxDoc.UpdateContents()
+            'pMxDoc.ActivatedView.PartialRefresh(esriViewDrawPhase.esriViewForeground, Nothing, Nothing)
+            'pMxDoc.UpdateContents()
             Return 0
         Catch ex As Exception
             MessageBox.Show("BA_MapDisplayPointMarkers Exception: " + ex.Message)
@@ -1379,8 +1379,8 @@ Public Module MapsModule
             End If
 
             'refresh the active view
-            pMxDoc.ActivatedView.Refresh()
-            pMxDoc.UpdateContents()
+            'pMxDoc.ActivatedView.Refresh()
+            'pMxDoc.UpdateContents()
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
@@ -1744,8 +1744,8 @@ Public Module MapsModule
             End If
 
             'refresh the active view
-            pMxDoc.ActiveView.PartialRefresh(2, Nothing, Nothing) 'esriViewGeography
-            pMxDoc.UpdateContents()
+            'pMxDoc.ActiveView.PartialRefresh(2, Nothing, Nothing) 'esriViewGeography
+            'pMxDoc.UpdateContents()
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
@@ -2531,7 +2531,7 @@ Public Module MapsModule
             pMElem = Nothing
             pMapSurround = Nothing
 
-            pMxDoc.ActiveView.Refresh()
+            'pMxDoc.ActiveView.Refresh()
         End If
 
         pGraphicsContainer = Nothing
