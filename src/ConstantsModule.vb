@@ -83,6 +83,7 @@
     Public Const BA_FIELD_AREA As String = "AREA"
     Public Const BA_FIELD_SHAPE_AREA As String = "Shape_Area"
     Public Const BA_FIELD_AOI_NAME As String = "AOINAME"
+    Public Const BA_FIELD_PSITE As String = "PSITE"
 
     'mapframe
     Public Const BA_MAPS_DEFAULT_MAP_NAME As String = "Basin Analysis"
@@ -114,7 +115,7 @@
     Public Const BA_MAPS_PS_BASEMAP = "AOI"
     Public Const BA_MAPS_PS_INDICATOR = "New Pseudo Site Indicator"
     Public Const BA_MAPS_PS_PROXIMITY = "Area excluded by Proximity"
-    Public Const BA_MAPS_PS_PRECIPITATION = "Area excluded by Precipitation"
+    Public Const BA_MAPS_PS_PRECIPITATION = "Area Included For Precipitation"
 
     'these constants are used to ID whether a folder is a basin or an AOI or both
     Public Const BA_BASIN_DEM_EXTENT_SHAPEFILE As String = "aoi_v" 'vector
