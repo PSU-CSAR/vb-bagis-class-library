@@ -8,5 +8,7 @@
     Red_to_Blue_Diverging
     FilledDem
     Cyan_Light_to_Blue_Dark
+    Purple_Blues
+    Condition_Number
     Unknown
 End Enum

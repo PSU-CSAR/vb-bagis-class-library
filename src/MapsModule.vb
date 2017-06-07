@@ -298,6 +298,12 @@ Public Module MapsModule
                     Case MapsDisplayStyle.Cyan_Light_to_Blue_Dark 'Pseudo-site base
                         StyleName = "Cyan-Light to Blue-Dark"
                         StyleCategory = "Default Ramps"
+                    Case MapsDisplayStyle.Purple_Blues 'Pseudo-site Precipitation Layer (dark blue)
+                        StyleName = "Purple Blues"
+                        StyleCategory = "Default Schemes"
+                    Case MapsDisplayStyle.Condition_Number 'Pseudo-site Elevation Layer (dark green)
+                        StyleName = "Condition Number"
+                        StyleCategory = "Geostatistical Ramps"
                     Case Else
                         StyleName = "Black to White"
                         StyleCategory = "Default Ramps"
@@ -2480,7 +2486,7 @@ Public Module MapsModule
         LayerNames(9) = BA_MAPS_PSEUDO_SCENARIO2
         LayerNames(10) = BA_MAPS_FILLED_DEM
         LayerNames(11) = BA_MAPS_NOT_REPRESENTED
-        LayerNames(12) = BA_MAPS_PS_INCLUDE
+        LayerNames(12) = BA_MAPS_PS_BASEMAP
         LayerNames(13) = BA_MAPS_PS_INDICATOR
 
         'Set the page layout.
@@ -3270,6 +3276,53 @@ Public Module MapsModule
         pMap = Nothing
         pMaps = Nothing
         Return return_value
+    End Function
+
+    Public Function BA_AddFieldToRaster(ByVal filepath As String, ByVal FileName As String, ByVal fieldName As String, _
+                                        ByVal fieldType As esriFieldType, ByVal fieldLength As Int16, ByVal fieldValue As Object) As BA_ReturnCode
+
+        'open raster attribute table
+        Dim pRDataset As IGeoDataset = BA_OpenRasterFromGDB(filepath, FileName)
+        Dim pBandCol As IRasterBandCollection = CType(pRDataset, IRasterBandCollection)
+        Dim pRasterBand As IRasterBand = pBandCol.Item(0)
+        Dim pTable As ITable = pRasterBand.AttributeTable
+        Dim pCursor As ICursor = Nothing
+        Try
+            Dim idxField As Int16 = pTable.FindField(fieldName)
+            Dim pField As IField = New Field
+            Dim pFld As IFieldEdit2 = CType(pField, IFieldEdit2)
+            Dim pRow As IRow
+
+            If idxField < 0 Then
+                'Define field
+                pFld.Name_2 = fieldName
+                pFld.Type_2 = fieldType
+                pFld.Length_2 = fieldLength
+                pFld.Required_2 = False
+                 ' Add field
+                pTable.AddField(pFld)
+                idxField = pTable.FindField(fieldName)
+            End If
+
+            'Open update cursor
+            pCursor = pTable.Update(Nothing, False)
+            pRow = pCursor.NextRow
+            Do While Not pRow Is Nothing
+                pRow.Value(idxField) = fieldValue
+                pCursor.UpdateRow(pRow)
+                pRow = pCursor.NextRow
+            Loop
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_AddFieldToRaster Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pCursor = Nothing
+            pTable = Nothing
+            pBandCol = Nothing
+            pRasterBand = Nothing
+            pRDataset = Nothing
+        End Try
     End Function
 
 End Module

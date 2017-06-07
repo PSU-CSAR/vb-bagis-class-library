@@ -1224,13 +1224,18 @@ Public Module ToolsModule
         End Try
     End Function
 
+    'ignoreNoData added June 6, 2017
     Public Function BA_GetCellStatistics(ByVal inRasters As String, ByVal snapRasterPath As String, _
-                                         ByVal statisticsType As String, ByVal outputRasterPath As String)
+                                         ByVal statisticsType As String, ByVal outputRasterPath As String, _
+                                         ByVal ignoreNoData As String)
         Dim tool As CellStatistics = New CellStatistics
         Try
             tool.in_rasters_or_constants = inRasters
             tool.out_raster = outputRasterPath
             tool.statistics_type = statisticsType
+            If Not String.IsNullOrEmpty(ignoreNoData) Then
+                tool.ignore_nodata = ignoreNoData
+            End If
             Dim retVal As Integer = Execute_Geoprocessing(tool, False, snapRasterPath)
             If retVal = 1 Then
                 Return BA_ReturnCode.Success
@@ -1481,13 +1486,12 @@ Public Module ToolsModule
     End Function
 
     Public Function BA_EuclideanDistance(ByVal inputFeatures As String, ByVal outRaster As String, ByVal cellSize As String, _
-                                         ByVal maskPath As String, ByVal snapRasterPath As String) As BA_ReturnCode
+                                         ByVal maskPath As String, ByVal snapRasterPath As String, ByVal extentPath As String) As BA_ReturnCode
         Dim tool As EucDistance = New EucDistance()
         tool.in_source_data = inputFeatures
         tool.out_distance_raster = outRaster
         tool.cell_size = cellSize
-        'No snapRasterPath because not a spatial analyst tool
-        Return Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
+        Return Execute_GeoprocessingWithExtent(tool, maskPath, False, snapRasterPath, cellSize, extentPath)
     End Function
 
     Public Function BA_RasterCalculator(ByVal outputRasterPath As String, ByVal expression As String, ByVal snapRasterPath As String,
@@ -1539,6 +1543,51 @@ Public Module ToolsModule
             Return BA_ReturnCode.Success
         Catch ex As Exception
             MessageBox.Show("BA_AppendFeatures Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
+    Private Function Execute_GeoprocessingWithExtent(ByVal tool As IGPProcess, ByVal maskPath As String, _
+                                                     ByVal addOutputs As Boolean, ByVal snapRasterPath As String, _
+                                                     ByVal strCellSize As String, ByVal extentPath As String) As BA_ReturnCode
+        Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
+        Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult
+        Try
+            GP.OverwriteOutput = True
+            GP.SetEnvironmentValue("cellsize", strCellSize)
+            GP.SetEnvironmentValue("mask", maskPath)
+            GP.SetEnvironmentValue("extent", extentPath)
+            GP.AddOutputsToMap = addOutputs
+            If Not String.IsNullOrEmpty(snapRasterPath) Then
+                GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            End If
+            pResult = GP.Execute(tool, Nothing)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            If GP.MessageCount > 0 Then
+                MessageBox.Show("Geoprocessor error: " + GP.GetMessages(2))
+            Else
+                MessageBox.Show("Exception: " + ex.Message)
+            End If
+            Return BA_ReturnCode.UnknownError
+        Finally
+            GP = Nothing
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+        End Try
+    End Function
+
+    Public Function BA_Times(ByVal inRasterPath1 As String, ByVal inRasterPath2 As String, _
+                             ByVal outRasterPath As String) As BA_ReturnCode
+        Dim tool As Times = New Times
+        Try
+            tool.in_raster_or_constant1 = inRasterPath1
+            tool.in_raster_or_constant2 = inRasterPath2
+            tool.out_raster = outRasterPath
+            Execute_Geoprocessing(tool, False, Nothing)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_Times Exception: " + ex.Message)
             Return BA_ReturnCode.UnknownError
         End Try
     End Function
