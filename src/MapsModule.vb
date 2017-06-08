@@ -304,6 +304,9 @@ Public Module MapsModule
                     Case MapsDisplayStyle.Condition_Number 'Pseudo-site Elevation Layer (dark green)
                         StyleName = "Condition Number"
                         StyleCategory = "Geostatistical Ramps"
+                    Case MapsDisplayStyle.Yellows 'Pseudo-site proximity Layer (orange)
+                        StyleName = "Yellows"
+                        StyleCategory = "Default Schemes"
                     Case Else
                         StyleName = "Black to White"
                         StyleCategory = "Default Ramps"
@@ -2471,7 +2474,7 @@ Public Module MapsModule
     'remove background layers from the map legend
     'also set the format of the legend
     Public Sub BA_RemoveLayersfromLegend(ByVal pMxDoc As IMxDocument)
-        Dim LayerCount As Integer = 13
+        Dim LayerCount As Integer = 12
         Dim LayerNames() As String
         'layers to be removed are:
         ReDim LayerNames(0 To LayerCount)
@@ -2485,9 +2488,8 @@ Public Module MapsModule
         LayerNames(8) = BA_MAPS_PSEUDO_SCENARIO1
         LayerNames(9) = BA_MAPS_PSEUDO_SCENARIO2
         LayerNames(10) = BA_MAPS_FILLED_DEM
-        LayerNames(11) = BA_MAPS_NOT_REPRESENTED
-        LayerNames(12) = BA_MAPS_PS_BASEMAP
-        LayerNames(13) = BA_MAPS_PS_INDICATOR
+        LayerNames(11) = BA_MAPS_AOI_BASEMAP
+        LayerNames(12) = BA_MAPS_PS_INDICATOR
 
         'Set the page layout.
         Dim pPageLayout As IPageLayout = pMxDoc.PageLayout

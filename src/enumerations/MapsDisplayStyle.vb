@@ -10,5 +10,6 @@
     Cyan_Light_to_Blue_Dark
     Purple_Blues
     Condition_Number
+    Yellows
     Unknown
 End Enum
