@@ -271,8 +271,6 @@ Public Module WebservicesModule
 
     End Function
 
-    'Note that an image service can't be clipped directly to a vector. This function converts a vector to a raster
-    'before calling another clip function and deletes the temporary raster when the clip completes
     Public Function BA_ClipImageServiceToVector(ByVal clipFilePath As String, ByVal webServiceUrl As String, _
                                                 ByVal newFilePath As String) As BA_ReturnCode
         Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(newFilePath)
@@ -304,10 +302,10 @@ Public Module WebservicesModule
 
             'Reset extent to accomodate cell size
             Dim aPoint As IPnt = imageRasterProps.MeanCellSize
-            newExtent.xmin = imageRasterProps.Extent.XMin + Math.Truncate((extent.XMin - imageRasterProps.Extent.XMin) / aPoint.X) * aPoint.X
-            newExtent.ymin = imageRasterProps.Extent.YMin + Math.Truncate((extent.YMin - imageRasterProps.Extent.YMin) / aPoint.Y) * aPoint.Y
-            newExtent.xmax = newExtent.xmin + aPoint.X * xCols
-            newExtent.ymax = newExtent.ymin + aPoint.Y * yRows
+            newExtent.XMin = imageRasterProps.Extent.XMin + Math.Truncate((extent.XMin - imageRasterProps.Extent.XMin) / aPoint.X) * aPoint.X
+            newExtent.YMin = imageRasterProps.Extent.YMin + Math.Truncate((extent.YMin - imageRasterProps.Extent.YMin) / aPoint.Y) * aPoint.Y
+            newExtent.XMax = newExtent.XMin + aPoint.X * xCols
+            newExtent.YMax = newExtent.YMin + aPoint.Y * yRows
 
             '@ToDo: May need to worry about the projection in real-life
             imageRasterProps.Extent = newExtent

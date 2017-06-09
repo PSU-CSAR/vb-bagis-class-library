@@ -2060,10 +2060,20 @@ Public Module AOIModule
     End Function
 
     Public Function BA_ClipAOIImageServer(ByVal AoiFolder As String, ByVal strDEMDataSet As String, ByVal newFilePath As String, ByVal clipFile As AOIClipFile) As Integer
-        Dim clipFilePath As String = BA_GeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, True) & BA_EnumDescription(clipFile)
+        Dim newFolderPath As String = "PleaseReturn"
+        Dim newFileName As String = BA_GetBareName(newFilePath, newFolderPath)
+        Dim tempOutputName As String = "tmpImg"
+        Dim clipFilePath As String = BA_GeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, True) + BA_EnumDescription(clipFile)
         Dim response As Integer = -1
-        Dim success As BA_ReturnCode = BA_ClipImageServiceToVector(clipFilePath, strDEMDataSet, newFilePath)
-        If success = BA_ReturnCode.Success Then response = 1
+        Dim success As BA_ReturnCode = BA_ClipImageServiceToVector(clipFilePath, strDEMDataSet, newFolderPath + tempOutputName)
+        If success = BA_ReturnCode.Success Then
+            'BA_ClipImageServiceToVector returns a rectangle; We have to reclip to clip to the AOI boundary
+            response = BA_ClipAOIRaster(AoiFolder, newFolderPath + tempOutputName, newFileName, _
+                                        newFolderPath, clipFile)
+            If response = 1 Then
+                BA_RemoveRasterFromGDB(newFolderPath, tempOutputName)
+            End If
+        End If
         Return response
     End Function
 
