@@ -602,6 +602,7 @@ Public Module PublicModule
         Dim pWSF As IWorkspaceFactory = Nothing
         ' Create ConversionOP
         Dim pConversionOp As IConversionOp = New RasterConversionOp
+        Dim pEnv As IRasterAnalysisEnvironment = CType(pConversionOp, IRasterAnalysisEnvironment)
 
         Try
             ' Get Shapefile Final Location
@@ -614,6 +615,7 @@ Public Module PublicModule
                 pWSF = New FileGDBWorkspaceFactory
                 pWS = pWSF.OpenFromFile(Shapefile_BasePath, 0)
             End If
+            pEnv.OutWorkspace = pWS
 
             ' Calls function to open a feature class from disk
             pFClass = pConversionOp.RasterDataToPolygonFeatureData(RasterDS, pWS, shapefilename, False)
