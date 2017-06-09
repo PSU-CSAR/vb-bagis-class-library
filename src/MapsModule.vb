@@ -1284,7 +1284,8 @@ Public Module MapsModule
     '                   1, add and replace only
     '                   2, add
     Public Function BA_AddExtentLayer(ByVal pMxDoc As IMxDocument, ByVal LayerPathName As String, _
-                                      ByVal rgbColor As IRgbColor, Optional ByVal DisplayName As String = "", _
+                                      ByVal rgbColor As IRgbColor, ByVal refreshView As Boolean, _
+                                      Optional ByVal DisplayName As String = "", _
                                       Optional ByVal Action As Short = 0, Optional ByVal Buffer_Factor As Double = 2, _
                                       Optional ByVal lineSymbolWidth As Double = 1.0) As BA_ReturnCode
         Dim File_Path As String = "PleaseReturn"
@@ -1388,8 +1389,10 @@ Public Module MapsModule
             End If
 
             'refresh the active view
-            'pMxDoc.ActivatedView.Refresh()
-            'pMxDoc.UpdateContents()
+            If refreshView = True Then
+                pMxDoc.ActivatedView.Refresh()
+                pMxDoc.UpdateContents()
+            End If
 
             Return BA_ReturnCode.Success
         Catch ex As Exception
@@ -1948,7 +1951,7 @@ Public Module MapsModule
         filepath = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Aoi, True)
         FileName = BA_EnumDescription(AOIClipFile.AOIExtentCoverage)
         filepathname = filepath & FileName
-        response = BA_AddExtentLayer(pMxDoc, filepathname, Nothing, BA_MAPS_AOI_BOUNDARY, 0, 1.2, 2.0)
+        response = BA_AddExtentLayer(pMxDoc, filepathname, Nothing, False, BA_MAPS_AOI_BOUNDARY, 0, 1.2, 2.0)
 
         'add aoi streams layer
         filepath = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers, True)
