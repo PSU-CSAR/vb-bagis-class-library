@@ -1980,39 +1980,46 @@ Public Module GeodatabaseModule
 
     Public Function BA_AddUserFieldToRaster(ByVal filepath As String, ByVal FileName As String, ByVal fieldName As String, _
                                             ByVal fieldType As esriFieldType, ByVal fieldLength As Int16, ByVal fieldValue As Object) As BA_ReturnCode
-
-        'open raster attribute table
-        Dim pRDataset As IGeoDataset = BA_OpenRasterFromGDB(filepath, FileName)
-        Dim pBandCol As IRasterBandCollection = CType(pRDataset, IRasterBandCollection)
-        Dim pRasterBand As IRasterBand = pBandCol.Item(0)
-        Dim pTable As ITable = pRasterBand.AttributeTable
+        Dim pRDataset As IGeoDataset = Nothing
+        Dim pBandCol As IRasterBandCollection = Nothing
+        Dim pRasterBand As IRasterBand = Nothing
         Dim pCursor As ICursor = Nothing
+        Dim pTable As ITable = Nothing
         Try
-            Dim idxField As Int16 = pTable.FindField(fieldName)
-            Dim pField As IField = New Field
-            Dim pFld As IFieldEdit2 = CType(pField, IFieldEdit2)
-            Dim pRow As IRow
+            pRDataset = BA_OpenRasterFromGDB(filepath, FileName)
+            If pRDataset IsNot Nothing Then
+                pBandCol = CType(pRDataset, IRasterBandCollection)
+                pRasterBand = pBandCol.Item(0)
+                'open raster attribute table
+                pTable = pRasterBand.AttributeTable
+                Dim idxField As Int16 = pTable.FindField(fieldName)
+                Dim pField As IField = New Field
+                Dim pFld As IFieldEdit2 = CType(pField, IFieldEdit2)
+                Dim pRow As IRow
 
-            If idxField < 0 Then
-                'Define field
-                pFld.Name_2 = fieldName
-                pFld.Type_2 = fieldType
-                pFld.Length_2 = fieldLength
-                pFld.Required_2 = False
-                ' Add field
-                pTable.AddField(pFld)
-                idxField = pTable.FindField(fieldName)
-            End If
+                If idxField < 0 Then
+                    'Define field
+                    pFld.Name_2 = fieldName
+                    pFld.Type_2 = fieldType
+                    pFld.Length_2 = fieldLength
+                    pFld.Required_2 = False
+                    ' Add field
+                    pTable.AddField(pFld)
+                    idxField = pTable.FindField(fieldName)
+                End If
 
-            'Open update cursor
-            pCursor = pTable.Update(Nothing, False)
-            pRow = pCursor.NextRow
-            Do While Not pRow Is Nothing
-                pRow.Value(idxField) = fieldValue
-                pCursor.UpdateRow(pRow)
+                'Open update cursor
+                pCursor = pTable.Update(Nothing, False)
                 pRow = pCursor.NextRow
-            Loop
-            Return BA_ReturnCode.Success
+                Do While Not pRow Is Nothing
+                    pRow.Value(idxField) = fieldValue
+                    pCursor.UpdateRow(pRow)
+                    pRow = pCursor.NextRow
+                Loop
+                Return BA_ReturnCode.Success
+            Else
+                Return BA_ReturnCode.UnknownError
+            End If
         Catch ex As Exception
             MessageBox.Show("BA_AddFieldToRaster Exception: " + ex.Message)
             Return BA_ReturnCode.UnknownError
