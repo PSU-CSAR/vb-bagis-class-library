@@ -1957,13 +1957,20 @@ Public Module GeodatabaseModule
 
     Public Function BA_IsRasterEmpty(ByVal rFolder As String, ByVal rFile As String) As Boolean
         Dim pRDataset As IGeoDataset = BA_OpenRasterFromGDB(rFolder, rFile)
-        Dim pBandCol As IRasterBandCollection = CType(pRDataset, IRasterBandCollection)
-        Dim pRasterBand As IRasterBand = pBandCol.Item(0)
-        Dim pTable As ITable = pRasterBand.AttributeTable
+        Dim pTable As ITable = Nothing
+        Dim pBandCol As IRasterBandCollection = Nothing
+        Dim pRasterBand As IRasterBand = Nothing
         Try
-            Dim rCount As Integer = pTable.RowCount(Nothing)
-            If rCount > 0 Then
-                Return False
+            If pRDataset IsNot Nothing Then
+                pBandCol = CType(pRDataset, IRasterBandCollection)
+                pRasterBand = pBandCol.Item(0)
+                pTable = pRasterBand.AttributeTable
+                Dim rCount As Integer = pTable.RowCount(Nothing)
+                If rCount > 0 Then
+                    Return False
+                Else
+                    Return True
+                End If
             Else
                 Return True
             End If
