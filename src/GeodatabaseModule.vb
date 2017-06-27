@@ -2039,4 +2039,31 @@ Public Module GeodatabaseModule
             End Try
     End Function
 
+    'Opens a raster and checks the properties to see if it is an integer raster
+    Public Function BA_HasAttributeTable(ByVal fullLayerFilePath As String) As Boolean
+        Dim filePath As String = "blank"
+        Dim fileName As String = BA_GetBareName(fullLayerFilePath, filePath)
+        Dim pGeoDS As IGeoDataset = Nothing
+        Dim pRasterBandColl As IRasterBandCollection = Nothing
+        Dim pRasterBand As IRasterBand = Nothing
+        Try
+            pGeoDS = BA_OpenRasterFromGDB(filePath, fileName)
+            If pGeoDS Is Nothing Then
+                Return False
+            End If
+            pRasterBandColl = CType(pGeoDS, IRasterBandCollection)
+            pRasterBand = pRasterBandColl.Item(0)
+            Dim hasTable As Boolean = False
+            pRasterBand.HasTable(hasTable)
+            Return hasTable
+        Catch ex As Exception
+            MessageBox.Show("BA_HasAttributeTable Exception: " + ex.Message)
+            Return False
+        Finally
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pRasterBand)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pRasterBandColl)
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pGeoDS)
+        End Try
+
+    End Function
 End Module
