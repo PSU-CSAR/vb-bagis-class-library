@@ -988,7 +988,7 @@ Public Module MapsModule
             Else
                 pmxDoc.PageLayout.ZoomToWhole()
             End If
-            pmxDoc.ActiveView.Refresh()
+            'pmxDoc.ActiveView.Refresh()
         End If
     End Sub
 
