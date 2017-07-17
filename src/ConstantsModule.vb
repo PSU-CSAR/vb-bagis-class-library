@@ -115,6 +115,7 @@
     Public Const BA_MAPS_PS_PROXIMITY = "Area Included For Proximity"
     Public Const BA_MAPS_PS_PRECIPITATION = "Area Included For Precipitation"
     Public Const BA_MAPS_PS_LOCATION = "Area Included For Location"
+    Public Const BA_MAPS_PS_ALL_CONSTRAINTS = "Area Meeting All Constraints"
 
     'these constants are used to ID whether a folder is a basin or an AOI or both
     Public Const BA_BASIN_DEM_EXTENT_SHAPEFILE As String = "aoi_v" 'vector
