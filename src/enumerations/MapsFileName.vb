@@ -42,5 +42,6 @@ Public Enum MapsFileName
     <Description("s2_snowCourse_b")> S2SnowCourseBuffers
     <Description("s2_pseudo_b")> S2PseudoBuffers
     <Description("timber_r")> timber_r
+    <Description("s1_stelzone")> S1SnotelZone
 
 End Enum
