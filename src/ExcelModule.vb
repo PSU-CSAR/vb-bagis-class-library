@@ -18,15 +18,17 @@ Public Module ExcelModule
     'aspect, slope, snotel, and snow course tables have a beginning_row value of 2
     'other tables have a value of 3.
     Public Function BA_Excel_CountRecords(ByVal pworksheet As Worksheet, ByVal beginning_row As Integer) As Long
-        Dim count As Long = pworksheet.UsedRange.Rows.Count
         Dim validRow As Long = 0
-        For i = beginning_row To count
-            Dim cell As Range = pworksheet.UsedRange.Cells(i, 1)
-            Dim strCell As String = cell.ToString
-            If Not String.IsNullOrEmpty(strCell) Then
-                validRow = validRow + 1
-            End If
-        Next
+        If pworksheet IsNot Nothing Then
+            Dim count As Long = pworksheet.UsedRange.Rows.Count
+            For i = beginning_row To count
+                Dim cell As Range = pworksheet.UsedRange.Cells(i, 1)
+                Dim strCell As String = cell.ToString
+                If Not String.IsNullOrEmpty(strCell) Then
+                    validRow = validRow + 1
+                End If
+            Next
+        End If
         Return validRow
     End Function
 
@@ -1342,9 +1344,10 @@ Public Module ExcelModule
     Public Function BA_Excel_CreateCombinedChart(ByRef pPRISMWorkSheet As Worksheet, ByRef pElvWorksheet As Worksheet, ByRef pChartsWorksheet As Worksheet, _
                                                  ByRef pSnowCourseWorksheet As Worksheet, ByRef pSNOTELWorksheet As Worksheet, ByVal Y_Min As Double, _
                                                  ByVal Y_Max As Double, ByVal Y_Unit As Double, ByVal MaxPRISMValue As Double, ByVal optZMetersValue As Boolean, _
-                                                 ByVal optZFeetValue As Boolean, ByVal aoiHasSnotel As Boolean, ByVal aoiHasSnowCourse As Boolean)
+                                                 ByVal optZFeetValue As Boolean, ByVal aoiHasSnotel As Boolean, ByVal aoiHasSnowCourse As Boolean, _
+                                                 ByVal pPseudoWorkSheet As Worksheet, ByVal aoiHasPseudo As Boolean)
 
-        Dim ElevReturn As Long, PRISMReturn As Long, SNOTELReturn As Long, SnowCourseReturn As Long
+        Dim ElevReturn As Long, PRISMReturn As Long, SNOTELReturn As Long, SnowCourseReturn As Long, PseudoReturn As Long
 
         Dim nrecords As Long = BA_Excel_CountRecords(pElvWorksheet, 2)
         ElevReturn = nrecords + 2
@@ -1357,6 +1360,10 @@ Public Module ExcelModule
 
         nrecords = BA_Excel_CountRecords(pSnowCourseWorksheet, 1)
         SnowCourseReturn = nrecords - 1 'not counting the last record, i.e., not presented
+
+        nrecords = BA_Excel_CountRecords(pPseudoWorkSheet, 1)
+        PseudoReturn = nrecords - 1 'not counting the last record, i.e., not presented
+
 
         Dim myChart As Chart = pChartsWorksheet.Shapes.AddChart.Chart
 
@@ -1382,6 +1389,14 @@ Public Module ExcelModule
         If aoiHasSnowCourse Then
             xSnowCourseValueRange = "A2:A" & SnowCourseReturn
             vSnowCourseValueRange = "K2:K" & SnowCourseReturn
+        End If
+
+        'Set Pseudo-site Ranges
+        Dim vPseudoValueRange As String = Nothing
+        Dim xPseudoValueRange As String = Nothing
+        If aoiHasPseudo Then
+            xPseudoValueRange = "A2:A" & PseudoReturn
+            vPseudoValueRange = "K2:K" & PseudoReturn
         End If
 
         'Set PRISM Data Ranges
@@ -1414,7 +1429,13 @@ Public Module ExcelModule
             'Set Chart Position
             .Parent.Left = BA_ChartSpacing
             .Parent.Width = BA_ChartWidth
-            .Parent.Top = BA_ChartHeight + BA_ChartSpacing + BA_ChartSpacing
+            If Not aoiHasPseudo Then
+                .Parent.Top = BA_ChartHeight + BA_ChartSpacing + BA_ChartSpacing
+            Else
+                'If there are pseudo-sites, we are calling this from the Site Scenario form and want
+                'the chart at the top of the page
+                .Parent.Top = BA_ChartSpacing
+            End If
             .Parent.Height = BA_ChartHeight
         End With
 
@@ -1456,6 +1477,24 @@ Public Module ExcelModule
                 .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleTriangle
                 .MarkerForegroundColor = RGB(0, 0, 0)
                 .MarkerBackgroundColor = RGB(0, 0, 0)
+                'Set Axis Group
+                .AxisGroup = Excel.XlAxisGroup.xlPrimary
+            End With
+        End If
+
+        'SNOTEL Series
+        Dim PseudoSeries As Series
+        If aoiHasPseudo Then
+            PseudoSeries = myChart.SeriesCollection.NewSeries
+            With PseudoSeries
+                .Name = "Pseudo Site"
+                'Set Series Values
+                .Values = pPseudoWorkSheet.Range(xPseudoValueRange)
+                .XValues = pPseudoWorkSheet.Range(vPseudoValueRange)
+                'Set Series Formats
+                .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleDiamond
+                .MarkerForegroundColor = RGB(255, 170, 0)
+                .MarkerBackgroundColor = RGB(255, 170, 0)
                 'Set Axis Group
                 .AxisGroup = Excel.XlAxisGroup.xlPrimary
             End With
