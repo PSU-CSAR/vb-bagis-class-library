@@ -7,6 +7,7 @@ Imports ESRI.ArcGIS.SpatialAnalyst
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Core
 Imports ESRI.ArcGIS.GeoAnalyst
+Imports ESRI.ArcGIS.DataSourcesGDB
 
 Public Module ExcelModule
 
@@ -136,6 +137,10 @@ Public Module ExcelModule
 
         Dim pTempRaster As IGeoDataset
         Dim pExtractOp As IExtractionOp2 = New RasterExtractionOp
+        'Explicitly set workspace
+        Dim pEnv As IRasterAnalysisEnvironment = CType(pExtractOp, IRasterAnalysisEnvironment)
+        Dim pWSF As IWorkspaceFactory = New FileGDBWorkspaceFactory()
+        pEnv.OutWorkspace = pWSF.OpenFromFile(ZInputPath, 0)
         pTempRaster = pExtractOp.Raster(pZoneRaster, pAOIRaster)
         pExtractOp = Nothing
         pZoneRaster = Nothing
@@ -147,6 +152,8 @@ Public Module ExcelModule
         Dim ZonalOp As IZonalOp
         Dim ZonalTable As ITable
         ZonalOp = New RasterZonalOp
+        pEnv = CType(ZonalOp, IRasterAnalysisEnvironment)
+        pEnv.OutWorkspace = pWSF.OpenFromFile(ZInputPath, 0)
         ZonalTable = ZonalOp.ZonalStatisticsAsTable(pTempRaster, pValueRaster, True)
         ZonalOp = Nothing
         pZoneRaster = Nothing
