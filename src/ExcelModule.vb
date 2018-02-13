@@ -1352,7 +1352,7 @@ Public Module ExcelModule
                                                  ByRef pSnowCourseWorksheet As Worksheet, ByRef pSNOTELWorksheet As Worksheet, ByVal Y_Min As Double, _
                                                  ByVal Y_Max As Double, ByVal Y_Unit As Double, ByVal MaxPRISMValue As Double, ByVal optZMetersValue As Boolean, _
                                                  ByVal optZFeetValue As Boolean, ByVal aoiHasSnotel As Boolean, ByVal aoiHasSnowCourse As Boolean, _
-                                                 ByVal pPseudoWorkSheet As Worksheet, ByVal aoiHasPseudo As Boolean)
+                                                 ByVal pPseudoWorkSheet As Worksheet, ByVal aoiHasPseudo As Boolean, ByVal topPosition As Integer)
 
         Dim ElevReturn As Long, PRISMReturn As Long, SNOTELReturn As Long, SnowCourseReturn As Long, PseudoReturn As Long
 
@@ -1436,14 +1436,8 @@ Public Module ExcelModule
             'Set Chart Position
             .Parent.Left = BA_ChartSpacing
             .Parent.Width = BA_ChartWidth
-            If Not aoiHasPseudo Then
-                .Parent.Top = BA_ChartHeight + BA_ChartSpacing + BA_ChartSpacing
-            Else
-                'If there are pseudo-sites, we are calling this from the Site Scenario form and want
-                'the chart at the top of the page
-                .Parent.Top = BA_ChartSpacing
-            End If
             .Parent.Height = BA_ChartHeight
+            .Parent.Top = topPosition
         End With
 
         'Clear Previous Series
