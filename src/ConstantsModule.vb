@@ -240,6 +240,11 @@
     Public Const BA_Url_ImageServer As String = "ImageServer"
     Public Const BA_Url_FeatureServer As String = "FeatureServer"
 
+    'AOI snotel site, snow course site, and pseudo-site attributes
+    Public Const BA_SiteSnotel = "stel"
+    Public Const BA_SiteSnowCourse = "scos"
+
+
 End Module
 
 

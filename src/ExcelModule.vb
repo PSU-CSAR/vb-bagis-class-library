@@ -2187,7 +2187,7 @@ Public Module ExcelModule
                                           ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
                                           ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
                                           ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String, _
-                                          ByVal demConversionFactor As Double) As BA_ReturnCode
+                                          ByVal demConversionFactor As Double, ByVal lstSelectedSites As IList(Of Site)) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
         Dim pFeature As IFeature
@@ -2245,32 +2245,53 @@ Public Module ExcelModule
                     If pCursor IsNot Nothing Then
                         pFeature = pCursor.NextFeature
                         Do While pFeature IsNot Nothing
-                            pStelElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pFeature.Value(idxPrecipCol))
-                            pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol)) * demConversionFactor
-                            pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
-                            pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
-                            If IsDBNull(pFeature.Value(idxAspectCol)) Then
-                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = BA_UNKNOWN
-                            Else
-                                pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
+                            Dim bAddRow As Boolean = True
+                            If lstSelectedSites IsNot Nothing Then
+                                bAddRow = False
+                                Dim strName As String = Convert.ToString(pFeature.Value(idxNameCol))
+                                Dim dblElevation As Double = Convert.ToDouble(pFeature.Value(idxElevCol))
+                                Dim strSiteType As String = Convert.ToString(pFeature.Value(idxTypeCol))
+                                For Each aSite As Site In lstSelectedSites
+                                    If strName.Equals(aSite.Name) Then
+                                        If dblElevation = aSite.Elevation Then
+                                            If aSite.SiteType = SiteType.Snotel AndAlso strSiteType.Equals(BA_SiteSnotel) Then
+                                                bAddRow = True
+                                                Exit For
+                                            ElseIf aSite.SiteType = SiteType.SnowCourse AndAlso strSiteType.Equals(BA_SiteSnowCourse) Then
+                                                bAddRow = True
+                                                Exit For
+                                            End If
+                                        End If
+                                    End If
+                                Next
                             End If
-                            If idxPartitionCol > 0 Then
-                                If IsDBNull(pFeature.Value(idxPartitionCol)) Then
-                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = BA_UNKNOWN
+                            If bAddRow = True Then
+                                pStelElvWorksheet.Cells(idxRow, idxPrecipExcelCol) = Convert.ToDouble(pFeature.Value(idxPrecipCol))
+                                pStelElvWorksheet.Cells(idxRow, idxElevExcelCol) = Convert.ToDouble(pFeature.Value(idxElevCol)) * demConversionFactor
+                                pStelElvWorksheet.Cells(idxRow, idxNameExcelCol) = Convert.ToString(pFeature.Value(idxNameCol))
+                                pStelElvWorksheet.Cells(idxRow, idxTypeExcelCol) = Convert.ToString(pFeature.Value(idxTypeCol))
+                                If IsDBNull(pFeature.Value(idxAspectCol)) Then
+                                    pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = BA_UNKNOWN
                                 Else
-                                    pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pFeature.Value(idxPartitionCol))
+                                    pStelElvWorksheet.Cells(idxRow, idxAspectExcelCol) = Convert.ToString(pFeature.Value(idxAspectCol))
                                 End If
-                            End If
-                            If idxZonesCol > 0 Then
-                                If IsDBNull(pFeature.Value(idxZonesCol)) Then
-                                    pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = BA_UNKNOWN
-                                Else
-                                    pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = Convert.ToString(pFeature.Value(idxZonesCol))
+                                If idxPartitionCol > 0 Then
+                                    If IsDBNull(pFeature.Value(idxPartitionCol)) Then
+                                        pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = BA_UNKNOWN
+                                    Else
+                                        pStelElvWorksheet.Cells(idxRow, idxPartitionExcelCol) = Convert.ToString(pFeature.Value(idxPartitionCol))
+                                    End If
                                 End If
+                                If idxZonesCol > 0 Then
+                                    If IsDBNull(pFeature.Value(idxZonesCol)) Then
+                                        pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = BA_UNKNOWN
+                                    Else
+                                        pStelElvWorksheet.Cells(idxRow, idxZonesExcelCol) = Convert.ToString(pFeature.Value(idxZonesCol))
+                                    End If
+                                End If
+                                idxRow += 1
                             End If
-
                             pFeature = pCursor.NextFeature
-                            idxRow += 1
                         Loop
                     End If
                 End If

@@ -246,4 +246,14 @@ Public Module EnumHelperModule
         Return AOIClipFile.Missing
     End Function
 
+    'Returns the Site entry associated with the Site's String representation
+    Public Function BA_GetSiteType(ByVal siteText As String) As SiteType
+        For Each pType As SiteType In [Enum].GetValues(GetType(SiteType))
+            If pType.ToString = siteText Then
+                Return pType
+            End If
+        Next
+        Return Nothing
+    End Function
+
 End Module

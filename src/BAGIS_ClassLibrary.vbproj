@@ -211,6 +211,7 @@
     <Compile Include="enumerations\PrismDataRange.vb" />
     <Compile Include="enumerations\ProfileClass.vb" />
     <Compile Include="enumerations\PublicPath.vb" />
+    <Compile Include="enumerations\SiteType.vb" />
     <Compile Include="enumerations\SlopeUnit.vb" />
     <Compile Include="enumerations\StatisticsFieldName.vb" />
     <Compile Include="enumerations\StatisticsTypeString.vb" />
@@ -265,6 +266,7 @@
     <Compile Include="Objects\ReclassItem.vb" />
     <Compile Include="Objects\ReclassTextItem.vb" />
     <Compile Include="Objects\SerializableData.vb" />
+    <Compile Include="Objects\Site.vb" />
     <Compile Include="Objects\StoredAoi.vb" />
     <Compile Include="Objects\StoredAoiArray.vb" />
     <Compile Include="Objects\TemplateAction.vb" />
