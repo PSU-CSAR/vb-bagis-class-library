@@ -84,6 +84,10 @@
     Public Const BA_FIELD_SHAPE_AREA As String = "Shape_Area"
     Public Const BA_FIELD_AOI_NAME As String = "AOINAME"
     Public Const BA_FIELD_PSITE As String = "PSITE"
+    Public Const BA_FIELD_RASTERVALU = "RASTERVALU"   'Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
+    Public Const BA_FIELD_PRECIP = "BA_PRECIP"
+    Public Const BA_FIELD_ASPECT = "BA_ASPECT"
+
 
     'mapframe
     Public Const BA_MAPS_DEFAULT_MAP_NAME As String = "Basin Analysis"
@@ -243,6 +247,7 @@
     'AOI snotel site, snow course site, and pseudo-site attributes
     Public Const BA_SiteSnotel = "stel"
     Public Const BA_SiteSnowCourse = "scos"
+    Public Const BA_SitePseudo = "psite"
 
 
 End Module
