@@ -2260,6 +2260,9 @@ Public Module ExcelModule
                                             ElseIf aSite.SiteType = SiteType.SnowCourse AndAlso strSiteType.Equals(BA_SiteSnowCourse) Then
                                                 bAddRow = True
                                                 Exit For
+                                            ElseIf aSite.SiteType = SiteType.Pseudo AndAlso strSiteType.Equals(BA_SitePseudo) Then
+                                                bAddRow = True
+                                                Exit For
                                             End If
                                         End If
                                     End If

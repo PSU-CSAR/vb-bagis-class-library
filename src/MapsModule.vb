@@ -3293,7 +3293,7 @@ Public Module MapsModule
                                               ByVal fullPrecipPath As String, ByVal partitionRasterPath As String, _
                                               ByVal rasterPartPrefix As String, ByVal zonesRasterPath As String, _
                                               ByVal zonesRasterPrefix As String, ByVal aspectLayerPath As String, _
-                                              ByVal aspectDirectionsNum As Short) As String
+                                              ByVal aspectDirectionsNum As Short) As BA_ReturnCode
         Dim layersGdbPath As String = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers, True)
         Dim hasPSites As Boolean = BA_File_Exists(layersGdbPath + BA_EnumDescription(MapsFileName.Pseudo), WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass)
         Dim pFClass As IFeatureClass = Nothing
@@ -3302,6 +3302,7 @@ Public Module MapsModule
         Dim pFeature As IFeature = Nothing
         Dim pField As IField = New Field
         Dim pFld As IFieldEdit2 = CType(pField, IFieldEdit2)
+        Dim success As BA_ReturnCode = BA_ReturnCode.UnknownError
         Try
             'Append layer type attribute to pseudo-site file file
             pFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(aoiPath, GeodatabaseNames.Layers), BA_EnumDescription(MapsFileName.Pseudo))
@@ -3331,8 +3332,8 @@ Public Module MapsModule
             Dim pSitesPrecipPath As String = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Analysis, True) + BA_EnumDescription(MapsFileName.PsitePrecVector)
             Dim tempSitesPrecipPath As String = BA_GeodatabasePath(aoiPath, GeodatabaseNames.Analysis, True) + "tmpPsiteExtract"
             'Extract PRISM values to sites
-            Dim success As BA_ReturnCode = BA_ExtractValuesToPoints(sitesPath, _
-                                           fullPrecipPath, tempSitesPrecipPath, fullPrecipPath, True)
+            success = BA_ExtractValuesToPoints(sitesPath, fullPrecipPath, tempSitesPrecipPath, _
+                                               fullPrecipPath, True)
             If success = BA_ReturnCode.Success Then
                 'Rename extracted precip field
                 Dim tempfileName As String = BA_GetBareName(tempSitesPrecipPath)
@@ -3392,10 +3393,11 @@ Public Module MapsModule
             Else
                 MessageBox.Show("An error occurred while trying to process the site layers for represented precipitation!")
             End If
-            Return sitesPath
+            success = BA_ReturnCode.Success
+            Return success
         Catch ex As Exception
             Debug.Print("BA_CreatePseudoSitesLayer Exception: " & ex.Message)
-            Return Nothing
+            Return success
         Finally
             pFClass = Nothing
             pCursor = Nothing
