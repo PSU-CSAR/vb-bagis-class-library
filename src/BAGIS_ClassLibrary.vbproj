@@ -271,6 +271,7 @@
     <Compile Include="Objects\StoredAoiArray.vb" />
     <Compile Include="Objects\TemplateAction.vb" />
     <Compile Include="Objects\TemplateRule.vb" />
+    <Compile Include="Objects\WebExceptionDetail.vb" />
     <Compile Include="Objects\Zone.vb" />
     <Compile Include="PathsModule.vb" />
     <Compile Include="ProgressIndicatorModule.vb" />
