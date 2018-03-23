@@ -998,8 +998,8 @@ Public Module MapsModule
     ' Zoom map display to AOI envelope
     ' No unit tests since this interacts with user interface
     Public Sub BA_ZoomToAOI(ByVal pmxDoc As IMxDocument, ByVal aoipathname As String)
-        Dim pActiveView As IActiveView
-        Dim pEnv As IEnvelope
+
+
 
         If String.IsNullOrEmpty(aoipathname) Then Exit Sub
 
@@ -1012,14 +1012,14 @@ Public Module MapsModule
             Exit Sub
         End If
 
-        pEnv = BA_GetBasinEnvelope(aoipathname)
-        pmxDoc.ActiveView.Extent = pEnv
-
-        pActiveView = pmxDoc.ActivatedView
+        Dim pEnv As IEnvelope = BA_GetBasinEnvelope(aoipathname)
+        Dim pActiveView As IActiveView = pmxDoc.ActivatedView
         If Not TypeOf pActiveView Is IPageLayout Then
             pmxDoc.ActiveView = pmxDoc.PageLayout
             pmxDoc.PageLayout.ZoomToWhole()
         End If
+
+        pActiveView.Extent = pEnv
     End Sub
 
     Public Function BA_GetRasterMapSymbology(ByVal fileName As String) As BA_Map_Symbology
