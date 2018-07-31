@@ -17,6 +17,10 @@ Public Module WebservicesModule
     Public Const BA_WebServerName = "https://test.ebagis.geog.pdx.edu"
     Public Const BA_EbagisApiVersion = "0.1"
 
+    'return values
+    ' BA_ReturnCode.ReadError: No features were found in the clip envelope; BA_ClipAOISnoWebServices
+    ' silently ignores this return code. Not an error, just no features found
+    ' BA_ReturnCode.Success: Success!
     Public Function BA_ClipFeatureService(ByVal clipFilePath As String, ByVal webServiceUrl As String, _
                                           ByVal newFilePath As String, ByVal aoiFolder As String) As BA_ReturnCode
         Dim wType As WorkspaceType = BA_GetWorkspaceTypeFromPath(newFilePath)
@@ -99,14 +103,16 @@ Public Module WebservicesModule
                 recordSet2.SaveAsTable(workspace, tempFile)
                 'Clip queried layer to aoi
                 Dim retVal As Short = BA_ClipAOIVector(aoiFolder, outputFolder & "\" & tempFile, outputFile, outputFolder, True)
+                'Delete temporary query file
+                'Re-initialize workspace to resolve separated RCW error
+                workspace = workspaceFactory.OpenFromFile(outputFolder, 0)
+                deleteFClass = workspace.OpenFeatureClass(tempFile)
+                deleteDataset = CType(deleteFClass, IDataset)
+                deleteDataset.Delete()
                 If retVal = 1 Then
-                    'Delete temporary query file
-                    'Re-initialize workspace to resolve separated RCW error
-                    workspace = workspaceFactory.OpenFromFile(outputFolder, 0)
-                    deleteFClass = workspace.OpenFeatureClass(tempFile)
-                    deleteDataset = CType(deleteFClass, IDataset)
-                    deleteDataset.Delete()
                     Return BA_ReturnCode.Success
+                ElseIf retVal = 0 Then
+                    Return BA_ReturnCode.ReadError
                 End If
                 Return BA_ReturnCode.UnknownError
             Catch ex As Exception
