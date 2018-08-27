@@ -1545,7 +1545,7 @@ Public Module MapsModule
             ''** use the name of the color ramp you selected.
             pUniqueValueRenderer.ColorScheme = "Black and White"
             Dim isString As Boolean = pTable.Fields.Field(fieldIndex).Type = esriFieldType.esriFieldTypeString
-            pUniqueValueRenderer.FieldType(0) = isString
+            'pUniqueValueRenderer.FieldType(0) = isString
             pGeoFeatureLayer.Renderer = pUniqueValueRenderer
 
             'This makes the layer properties symbology tab
