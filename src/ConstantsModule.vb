@@ -1,7 +1,7 @@
 ﻿Public Module ConstantsModule
 
     'Class library version; Update with each change to class library
-    Public Const BA_CLASS_LIBRARY_VERSION As String = "L038"
+    Public Const BA_CLASS_LIBRARY_VERSION As String = "L039"
 
     ' Used with BA_QueryAttributeTable to customize query
     Public Const BA_STRING_ATTRIBUTE As String = "string_attribute"
@@ -178,6 +178,8 @@
     Public Const BA_BAGIS_TAG_SUFFIX As String = " > End Tag"
     Public Const BA_ZUNIT_CATEGORY_TAG As String = "ZUnitCategory|"
     Public Const BA_ZUNIT_VALUE_TAG As String = "ZUnit|"
+    Public Const BA_BUFFER_DISTANCE_TAG As String = "BufferDistance|"
+    Public Const BA_XUNIT_VALUE_TAG As String = "XUnit|"
 
     'Excel chart
     Public Const BA_ChartWidth = 600
