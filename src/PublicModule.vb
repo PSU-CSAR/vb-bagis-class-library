@@ -453,7 +453,7 @@ Public Module PublicModule
     End Function
 
     'Opens and returns a IGeoDataset (raster) object
-    Public Function BA_OpenRasterFromFile(ByRef filepath As String, ByRef FileName As String) As IGeoDataset
+    Public Function BA_OpenRasterFromFile(ByVal filepath As String, ByVal FileName As String) As IGeoDataset
         Dim directoryInfo_check As DirectoryInfo = New DirectoryInfo(filepath)
         If directoryInfo_check.Exists Then
             'We have a valid directory, proceed

@@ -1204,4 +1204,34 @@ Public Module WebservicesModule
         End Try
     End Function
 
+    Public Function BA_ImageDatumMatch(ByVal layerPath As String, ByVal datumStr As String) As Boolean
+        Dim pSpRef As ISpatialReference = Nothing
+        Dim isLayer As IImageServerLayer = New ImageServerLayerClass
+        Dim isLayerInfo As IImageServiceInfo2
+        Try
+            'Create an image server layer by passing a URL.
+            isLayer.Initialize(layerPath)
+            'Get the info from the image server layer.
+            isLayerInfo = isLayer.ServiceInfo
+            'Spatial reference for the dataset in question
+            pSpRef = isLayerInfo.SpatialReference
+            'Extract datum string from spatial reference
+            Dim datumStr2 As String = BA_DatumString(pSpRef)
+            If (String.Compare(datumStr, datumStr2) = 0) Then
+                Return True
+            Else
+                Return False
+            End If
+        Catch ex As Exception
+            MessageBox.Show("BA_ImageDatumMatch Exception: " & ex.Message)
+            Return False
+        Finally
+            isLayer = Nothing
+            isLayerInfo = Nothing
+            pSpRef = Nothing
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+        End Try
+    End Function
+
 End Module
