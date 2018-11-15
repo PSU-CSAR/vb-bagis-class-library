@@ -2434,4 +2434,17 @@ Optional ByVal hasPaddingBackSlach As Boolean = False) As String
         End Try
     End Function
 
+    Public Function BA_RemoveTempRasters(ByVal folderPath As String) As BA_ReturnCode
+        Dim success As BA_ReturnCode = BA_ReturnCode.UnknownError
+        Dim AOIVectorList() As String = Nothing
+        Dim AOIRasterList() As String = Nothing
+        BA_ListLayersinAOI(folderPath, AOIRasterList, AOIVectorList)
+        If AOIRasterList.Length > 0 Then
+            For Each rasterLayer As String In AOIRasterList
+                success = BA_DeleteLayer_GP(folderPath + "\" + rasterLayer)
+            Next
+        End If
+        Return success
+    End Function
+
 End Module
