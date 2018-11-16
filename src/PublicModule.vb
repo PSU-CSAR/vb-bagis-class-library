@@ -2441,7 +2441,9 @@ Optional ByVal hasPaddingBackSlach As Boolean = False) As String
         BA_ListLayersinAOI(folderPath, AOIRasterList, AOIVectorList)
         If AOIRasterList.Length > 0 Then
             For Each rasterLayer As String In AOIRasterList
-                success = BA_DeleteLayer_GP(folderPath + "\" + rasterLayer)
+                If Not String.IsNullOrEmpty(rasterLayer) Then
+                    success = BA_DeleteLayer_GP(folderPath + "\" + rasterLayer)
+                End If
             Next
         End If
         Return success
