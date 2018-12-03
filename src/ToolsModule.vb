@@ -1631,6 +1631,19 @@ Public Module ToolsModule
         End Try
     End Function
 
+    Public Function BA_Raster2ASCII(ByVal inRasterPath As String, ByVal outRasterPath As String) As BA_ReturnCode
+        Dim tool As RasterToASCII = New RasterToASCII
+        Try
+            tool.in_raster = inRasterPath
+            tool.out_ascii_file = outRasterPath
+            Execute_Geoprocessing(tool, False, Nothing)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_Raster2ASCII Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
 End Module
 
 
