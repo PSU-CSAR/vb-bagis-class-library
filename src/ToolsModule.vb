@@ -970,7 +970,15 @@ Public Module ToolsModule
         tool.out_raster = outRasterDataset
         tool.neighborhood = neighborhood
         tool.statistics_type = statisticsType
-        Return Execute_GeoprocessingWithMask(tool, maskDataset, False, snapRasterPath)
+        If Not String.IsNullOrEmpty(maskDataset) Then
+            Return Execute_GeoprocessingWithMask(tool, maskDataset, False, snapRasterPath)
+        Else
+            If Execute_Geoprocessing(tool, False, Nothing) = 1 Then
+                Return BA_ReturnCode.Success
+            Else
+                Return BA_ReturnCode.UnknownError
+            End If
+        End If
     End Function
 
     'Delete data from disk
@@ -1627,6 +1635,19 @@ Public Module ToolsModule
             End If
         Catch ex As Exception
             MessageBox.Show("BA_Watershed Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        End Try
+    End Function
+
+    Public Function BA_Raster2ASCII(ByVal inRasterPath As String, ByVal outRasterPath As String) As BA_ReturnCode
+        Dim tool As RasterToASCII = New RasterToASCII
+        Try
+            tool.in_raster = inRasterPath
+            tool.out_ascii_file = outRasterPath
+            Execute_Geoprocessing(tool, False, Nothing)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_Raster2ASCII Exception: " + ex.Message)
             Return BA_ReturnCode.UnknownError
         End Try
     End Function
