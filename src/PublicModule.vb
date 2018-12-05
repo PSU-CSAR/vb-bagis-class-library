@@ -2449,4 +2449,14 @@ Optional ByVal hasPaddingBackSlach As Boolean = False) As String
         Return success
     End Function
 
+    Public Function BA_Smooth(ByVal inRaster As String, ByVal outRaster As String, ByVal neighborhoodWidth As String,
+                              ByVal neighborhoodHeight As String) As BA_ReturnCode
+        Dim success As BA_ReturnCode = BA_ReturnCode.UnknownError
+        'Sample neighborhood (width first then height): "Rectangle 5 5 Cell" 
+        Dim strNeighborhood As String = "Rectangle " + neighborhoodWidth + " " + neighborhoodHeight + " Cell"
+        success = BA_FocalStatistics_GP(inRaster, outRaster, Nothing,
+                                        strNeighborhood, "MEAN", Nothing)
+        Return success
+    End Function
+
 End Module
