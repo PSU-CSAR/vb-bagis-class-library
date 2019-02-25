@@ -35,7 +35,7 @@ Public Module WebservicesModule
         If Right(webServiceUrl, 1) <> "/" Then sb.Append("/")
         'append the query; where clause is required; This one returns all records
         Dim whereClause As String = "query?&where={0}"
-        sb.Append(String.Format(whereClause, HttpUtility.UrlEncode(String.Format("OBJECTID>{0}", 0))))
+        sb.Append(String.Format(whereClause, HttpUtility.UrlEncode("1=1")))
         'return all fields
         sb.Append("&outFields=*")
         'return the geometries
