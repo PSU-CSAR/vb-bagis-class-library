@@ -18,6 +18,7 @@ Imports ESRI.ArcGIS.Carto
 Imports ESRI.ArcGIS.GeoDatabaseUI
 Imports ESRI.ArcGIS.esriSystem
 Imports ESRI.ArcGIS.AnalysisTools
+Imports ESRI.ArcGIS.Geometry
 
 Public Module ToolsModule
 
@@ -32,10 +33,10 @@ Public Module ToolsModule
     '-1 if input error
     '0 if another error
     '1 if successful
-    Public Function BA_ZonalStats2Att(ByVal zoneFilePath As String, ByVal zoneFileName As String, _
-                                      ByVal tempFilePath As String, ByVal tempFileName As String, _
-                                      ByVal valueLayerFilePath As String, ByVal newFieldName As String, _
-                                      ByVal snapRasterPath As String, ByVal overwrite As Boolean, _
+    Public Function BA_ZonalStats2Att(ByVal zoneFilePath As String, ByVal zoneFileName As String,
+                                      ByVal tempFilePath As String, ByVal tempFileName As String,
+                                      ByVal valueLayerFilePath As String, ByVal newFieldName As String,
+                                      ByVal snapRasterPath As String, ByVal overwrite As Boolean,
                                       Optional ByVal statisticConst As StatisticsTypeString = StatisticsTypeString.MEAN) As Short
         ' Validate input file names
         Dim zoneLayerFilePath As String = zoneFilePath + "\" + zoneFileName
@@ -164,9 +165,9 @@ Public Module ToolsModule
     Public Function BA_GetDataSet(ByVal zoneLayerPath As String, ByVal zoneLayerName As String) As IGeoDataset
         Dim pWSF As IWorkspaceFactory = Nothing
         Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(zoneLayerPath)
-        If workspaceType = workspaceType.Raster Then
+        If workspaceType = WorkspaceType.Raster Then
             pWSF = New ShapefileWorkspaceFactory
-        ElseIf workspaceType = workspaceType.Geodatabase Then
+        ElseIf workspaceType = WorkspaceType.Geodatabase Then
             pWSF = New ESRI.ArcGIS.DataSourcesGDB.FileGDBWorkspaceFactory
         End If
 
@@ -188,9 +189,9 @@ Public Module ToolsModule
             Dim pFeatClass As IFeatureClass = pFeatWSpace.OpenFeatureClass(zoneLayerName)
             returnDataset = CType(pFeatClass, IGeoDataset)
         Else
-            If workspaceType = workspaceType.Raster Then
+            If workspaceType = WorkspaceType.Raster Then
                 pWSF = New RasterWorkspaceFactory
-            ElseIf workspaceType = workspaceType.Geodatabase Then
+            ElseIf workspaceType = WorkspaceType.Geodatabase Then
                 ' Do nothing; We already have a FileGDBWorkspaceFactory()
             End If
             Dim pRasterWSpace As IRasterWorkspaceEx = CType(pWSF.OpenFromFile(zoneLayerPath, 0), IRasterWorkspaceEx)
@@ -200,7 +201,7 @@ Public Module ToolsModule
         Return returnDataset
     End Function
 
-    Private Function Execute_Geoprocessing(ByVal tool As IGPProcess, ByVal addOutputs As Boolean, _
+    Private Function Execute_Geoprocessing(ByVal tool As IGPProcess, ByVal addOutputs As Boolean,
                                            ByVal snapRasterPath As String) As Short
         Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
         Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult = Nothing
@@ -231,7 +232,7 @@ Public Module ToolsModule
         End Try
     End Function
 
-    Private Function Execute_GeoprocessingWithMask(ByVal tool As IGPProcess, ByVal maskPath As String, _
+    Private Function Execute_GeoprocessingWithMask(ByVal tool As IGPProcess, ByVal maskPath As String,
                                                    ByVal addOutputs As Boolean, ByVal snapRasterPath As String) As BA_ReturnCode
         Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
         Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult
@@ -259,7 +260,7 @@ Public Module ToolsModule
         End Try
     End Function
 
-    Private Function Execute_GeoprocessingWithCellSize(ByVal tool As IGPProcess, ByVal addOutputs As Boolean, _
+    Private Function Execute_GeoprocessingWithCellSize(ByVal tool As IGPProcess, ByVal addOutputs As Boolean,
                                                        ByVal snapRasterPath As String, ByVal cellSize As String) As Short
         Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
         Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult = Nothing
@@ -290,8 +291,8 @@ Public Module ToolsModule
         End Try
     End Function
 
-    Private Function UpdateVectorColumn(ByVal sourceTable As ITable, ByRef targetDataSet As IGeoDataset, _
-                                           ByVal sourceColName As String, ByVal targetColName As String, _
+    Private Function UpdateVectorColumn(ByVal sourceTable As ITable, ByRef targetDataSet As IGeoDataset,
+                                           ByVal sourceColName As String, ByVal targetColName As String,
                                            ByVal srcField As String, ByVal overwrite As Boolean) As Short
 
         'get unique list of gridcode from the feature class
@@ -384,8 +385,8 @@ Public Module ToolsModule
 
     End Function
 
-    Private Function UpdateRasterColumn(ByVal sourceTable As ITable, ByRef targetDataSet As IGeoDataset, _
-                                           ByVal sourceColName As String, ByVal targetColName As String, _
+    Private Function UpdateRasterColumn(ByVal sourceTable As ITable, ByRef targetDataSet As IGeoDataset,
+                                           ByVal sourceColName As String, ByVal targetColName As String,
                                            ByVal overwrite As Boolean) As Short
 
         'open raster attribute table
@@ -469,7 +470,7 @@ Public Module ToolsModule
     End Function
 
 
-    Private Sub CheckColumnName(ByRef colName As String, ByVal statisticType As StatisticsTypeString, _
+    Private Sub CheckColumnName(ByRef colName As String, ByVal statisticType As StatisticsTypeString,
                                 ByVal layerIsRaster As Boolean)
         If String.IsNullOrEmpty(colName) Then
             colName = BA_FieldNameFromTypeString(statisticType)
@@ -487,9 +488,9 @@ Public Module ToolsModule
     'outputLayerPath: Path where output layer is to be written
     'outputLayerName: Name of output layer file
     'overwrite: Overwrite output layer if it exits
-    Public Function BA_ZoneOverlay(ByVal maskFilePath As String, ByVal layerList As List(Of String), _
-                                   ByVal outputLayerPath As String, ByVal outputLayerName As String, _
-                                   ByVal addOutputs As Boolean, ByVal overwrite As Boolean, _
+    Public Function BA_ZoneOverlay(ByVal maskFilePath As String, ByVal layerList As List(Of String),
+                                   ByVal outputLayerPath As String, ByVal outputLayerName As String,
+                                   ByVal addOutputs As Boolean, ByVal overwrite As Boolean,
                                    ByVal snapRasterPath As String, ByVal workspaceType As WorkspaceType) As BA_ReturnCode
         Dim outputFilePath As String = outputLayerPath & "\" & outputLayerName
         If BA_File_ExistsIDEUtil(outputFilePath) AndAlso overwrite = False Then
@@ -502,12 +503,12 @@ Public Module ToolsModule
             ' format of in_rasters is String like this: "filepath1; filepath2; filepath3"
             If layerList.Count > 0 Then
                 For Each layerName In layerList
-                    If workspaceType = workspaceType.Raster Then
+                    If workspaceType = WorkspaceType.Raster Then
                         If BA_IsIntegerRaster(layerName) Then
                             sb.Append(layerName)
                             sb.Append("; ")
                         End If
-                    ElseIf workspaceType = workspaceType.Geodatabase Then
+                    ElseIf workspaceType = WorkspaceType.Geodatabase Then
                         If BA_IsIntegerRasterGDB(layerName) Then
                             sb.Append(layerName)
                             sb.Append("; ")
@@ -565,7 +566,7 @@ Public Module ToolsModule
 
     End Function
 
-    Private Function RasterValidForStatisticType(ByVal fullLayerFilePath As String, _
+    Private Function RasterValidForStatisticType(ByVal fullLayerFilePath As String,
                                                     ByVal statisticConst As StatisticsTypeString) As Boolean
         Dim layerIsInteger As Boolean = BA_IsIntegerRasterGDB(fullLayerFilePath)
         'If layer is integer all statistics are supported
@@ -717,8 +718,8 @@ Public Module ToolsModule
 
     ' Use Resample geoprocessing tool to resample raster to specified cellSize
     ' Uses default nearest neighbor resampling algorithm
-    Public Function BA_Resample_Raster(ByVal inputRaster As String, ByVal outputRaster As String, _
-                                       ByVal cellSize As Double, ByVal snapRasterPath As String, _
+    Public Function BA_Resample_Raster(ByVal inputRaster As String, ByVal outputRaster As String,
+                                       ByVal cellSize As Double, ByVal snapRasterPath As String,
                                        ByVal resamplingType As String) As BA_ReturnCode
         Dim tool As New Resample
         Dim retCode As BA_ReturnCode = BA_ReturnCode.UnknownError
@@ -781,15 +782,15 @@ Public Module ToolsModule
 
     'Uses the Geoprocessor Reclassify tool to reclassify a raster from an array of 
     'ReclassItem(). 
-    Public Function BA_ReclassifyRasterFromTable(ByVal inputFolderPath As String, ByVal reclassField As String, _
-                                                 ByVal reclassItems As ReclassItem(), ByVal outputFolderPath As String, _
+    Public Function BA_ReclassifyRasterFromTable(ByVal inputFolderPath As String, ByVal reclassField As String,
+                                                 ByVal reclassItems As ReclassItem(), ByVal outputFolderPath As String,
                                                  ByVal actionType As ActionType, ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Reclassify = New Reclassify
         Try
             tool.in_raster = inputFolderPath
-            If actionType = actionType.ReclDisc Then
+            If actionType = ActionType.ReclDisc Then
                 tool.remap = BA_CreateDiscreteReclass(reclassItems)
-            ElseIf actionType = actionType.ReclCont Then
+            ElseIf actionType = ActionType.ReclCont Then
                 tool.remap = BA_CreateContinuousReclass(reclassItems)
             End If
             tool.reclass_field = reclassField
@@ -804,8 +805,8 @@ Public Module ToolsModule
         End Try
     End Function
 
-    Public Function BA_ReclassifyRasterFromTableWithNoData(ByVal inputFolderPath As String, ByVal reclassField As String, _
-                                                           ByVal reclassItems As ReclassItem(), ByVal outputFolderPath As String, _
+    Public Function BA_ReclassifyRasterFromTableWithNoData(ByVal inputFolderPath As String, ByVal reclassField As String,
+                                                           ByVal reclassItems As ReclassItem(), ByVal outputFolderPath As String,
                                                            ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Reclassify = New Reclassify
         Try
@@ -842,8 +843,8 @@ Public Module ToolsModule
 
     'Uses the Geoprocessor Reclassify tool to reclassify a raster from an array of 
     'ReclassTextItem().
-    Public Function BA_ReclassifyRasterFromReclassTextItems(ByVal inputFolderPath As String, ByVal reclassField As String, _
-                                                            ByVal reclassTextItems As ReclassTextItem(), ByVal outputFolderPath As String, _
+    Public Function BA_ReclassifyRasterFromReclassTextItems(ByVal inputFolderPath As String, ByVal reclassField As String,
+                                                            ByVal reclassTextItems As ReclassTextItem(), ByVal outputFolderPath As String,
                                                             ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Reclassify = New Reclassify
         Try
@@ -922,8 +923,8 @@ Public Module ToolsModule
     End Function
 
     ' Use FeatureToRaster GP tool to convert input feature class to raster
-    Public Function BA_Feature2RasterGP(ByVal inFeaturesPath As String, ByVal outRasterPath As String, _
-                                        ByVal inField As String, ByVal cellSize As Double, _
+    Public Function BA_Feature2RasterGP(ByVal inFeaturesPath As String, ByVal outRasterPath As String,
+                                        ByVal inField As String, ByVal cellSize As Double,
                                         ByVal snapRasterPath As String) As BA_ReturnCode
         Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
         Dim pResult As ESRI.ArcGIS.Geoprocessing.IGeoProcessorResult = Nothing
@@ -962,8 +963,8 @@ Public Module ToolsModule
     End Function
 
     ' Calculate focal statistics with GP
-    Public Function BA_FocalStatistics_GP(ByVal inRaster As String, ByVal outRasterDataset As String, _
-                                          ByVal maskDataset As String, ByVal neighborhood As String, _
+    Public Function BA_FocalStatistics_GP(ByVal inRaster As String, ByVal outRasterDataset As String,
+                                          ByVal maskDataset As String, ByVal neighborhood As String,
                                           ByVal statisticsType As String, ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As FocalStatistics = New FocalStatistics
         tool.in_raster = inRaster
@@ -1054,16 +1055,16 @@ Public Module ToolsModule
     End Function
 
     'Use slope geoprocessing tool to create a slope layer
-    Public Function BA_Calculate_Slope(ByVal demPath As String, ByVal outputPath As String, _
+    Public Function BA_Calculate_Slope(ByVal demPath As String, ByVal outputPath As String,
                                        ByVal slopeUnit As SlopeUnit, ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Slope = New Slope
         Try
             tool.in_raster = demPath
             tool.out_raster = outputPath
             Select Case slopeUnit
-                Case slopeUnit.PctSlope
+                Case SlopeUnit.PctSlope
                     tool.output_measurement = "PERCENT_RISE"
-                Case slopeUnit.Degree
+                Case SlopeUnit.Degree
                     tool.output_measurement = "DEGREE"
             End Select
 
@@ -1650,6 +1651,114 @@ Public Module ToolsModule
             MessageBox.Show("BA_Raster2ASCII Exception: " + ex.Message)
             Return BA_ReturnCode.UnknownError
         End Try
+    End Function
+
+    'return value
+    '-1: unknown error
+    '-2: output exists
+    '-3: missing parameters
+    '0: no intersect between the input and the clip layers
+    '1: clipping is done successfully
+    'Clip feature class to a provided feature class
+    Public Function BA_ClipFeatureClass(ByVal InputFeatureClass As String, ByVal OutputFeatureClass As String,
+                                        ByVal ClipFeatureClass As String) As BA_ReturnCode
+        Dim Data_Path As String = "Please Return"
+        Dim Data_Name As String = ""
+        Dim ClipName As String = "Please Return"
+        Dim ClipFolder As String = ""
+        Dim OutputName As String = "Please Return"
+        Dim OutputFolder As String = ""
+        Dim pClipFClass As IFeatureClass
+        Dim pClipFeatureLayer As IFeatureLayer
+        Dim pClipFCursor As IFeatureCursor
+        Dim pClipFeature As IFeature
+        Dim pGeo As IGeometry
+        Dim GP As ESRI.ArcGIS.Geoprocessor.Geoprocessor = New ESRI.ArcGIS.Geoprocessor.Geoprocessor()
+        Dim tool As ESRI.ArcGIS.AnalysisTools.Clip = New ESRI.ArcGIS.AnalysisTools.Clip()
+
+        If String.IsNullOrEmpty(InputFeatureClass) Then
+            Return BA_ReturnCode.ReadError
+        End If
+
+        Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(InputFeatureClass)
+        OutputName = BA_GetBareName(OutputFeatureClass, OutputFolder)
+        If Not BA_Workspace_Exists(outputFolder) Then
+            Throw New Exception("Output folder " + outputFolder + " does not exist.")
+        End If
+
+        'check if a layer of the same name exists in the AOI
+        If BA_File_Exists(OutputFeatureClass, WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass) Then
+            Return BA_ReturnCode.WriteError
+        End If
+
+        'clip the input layer
+        Try
+            'prepare for data clipping
+            'get vector clipping mask, raster clipping mask is created earlier, i.e., pWaterRDS
+            Dim pInputFClass As IFeatureClass = Nothing
+            Dim pTempFCursor As IFeatureCursor
+            Dim pTempFeature As IFeature
+            Dim pSFilter As ISpatialFilter
+
+            'get the clip geometry
+            ClipName = BA_GetBareName(ClipFeatureClass, ClipFolder)
+            pClipFClass = BA_OpenFeatureClassFromGDB(ClipFolder, ClipName)
+            pClipFeatureLayer = New FeatureLayer
+            pClipFeatureLayer.FeatureClass = pClipFClass
+
+            pClipFCursor = pClipFeatureLayer.Search(Nothing, False)
+            pClipFeature = pClipFCursor.NextFeature
+            pGeo = pClipFeature.Shape
+
+            'create a spatial filter for checking if the clipped layers are within the clip bnd
+            pSFilter = New SpatialFilter
+            With pSFilter
+                .Geometry = pGeo
+                .GeometryField = "SHAPE"
+                .SpatialRel = esriSpatialRelEnum.esriSpatialRelIntersects
+            End With
+
+            Data_Name = BA_GetBareName(InputFeatureClass, Data_Path)
+            If workspaceType = WorkspaceType.Geodatabase Then
+                pInputFClass = BA_OpenFeatureClassFromGDB(Data_Path, Data_Name)
+            ElseIf workspaceType = WorkspaceType.Raster Then
+                pInputFClass = BA_OpenFeatureClassFromFile(Data_Path, Data_Name)
+            End If
+
+            pTempFCursor = pInputFClass.Search(pSFilter, False)
+            pTempFeature = pTempFCursor.NextFeature
+
+            pInputFClass = Nothing
+            pTempFCursor = Nothing
+
+            'use geoprocessing object to clip data
+            If Not pTempFeature Is Nothing Then 'at least one input feature can be clipped
+                tool.in_features = InputFeatureClass    'the features to be clipped
+                tool.clip_features = ClipFeatureClass   'features used to clip the input features
+                tool.out_feature_class = OutputFeatureClass 'feature class to be created
+                GP.AddOutputsToMap = False
+                GP.Execute(tool, Nothing)
+                Return BA_ReturnCode.Success
+            Else
+                Return BA_ReturnCode.UnknownError
+            End If
+        Catch ex As Exception
+            If GP.MessageCount > 0 Then
+                MessageBox.Show("BA_ClipFeatureClass Geoprocessor error: " + GP.GetMessages(Type.Missing))
+            Else
+                MessageBox.Show("Exception: " + ex.Message)
+            End If
+            Return BA_ReturnCode.UnknownError
+        Finally
+            pClipFClass = Nothing
+            pClipFeatureLayer = Nothing
+            pClipFCursor = Nothing
+            pClipFeature = Nothing
+            pGeo = Nothing
+            tool = Nothing
+            GP = Nothing
+        End Try
+
     End Function
 
 End Module
