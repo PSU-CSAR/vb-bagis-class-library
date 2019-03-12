@@ -334,6 +334,18 @@ Public Module AOIModule
             'checking overlap between input and clip layers
             Dim pClipFClassPath As String = BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Aoi, True) & ClipShapeFile
             pClipFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Aoi), ClipShapeFile)
+            'check for multiple buffer polygons and buffer AOI if we need to
+            Dim tempClipFile As String = "tmpClipBuffer"
+            Dim tempClipName As String = BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis, True) + tempClipFile
+            If AOIClipKey = AOIClipFile.AOIExtentCoverage Then
+                Dim featureCount As Integer = pClipFClass.FeatureCount(Nothing)
+                If featureCount > 1 Then
+                    Dim success As BA_ReturnCode = BA_Buffer(pClipFClassPath, tempClipName, "0.5 Meters", "ALL")
+                    If success = BA_ReturnCode.Success Then
+                        pClipFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis, True), tempClipFile)
+                    End If
+                End If
+            End If
             'retrieve IFeature from FeatureClass
             pClipFeatureLayer.FeatureClass = pClipFClass
             pClipFCursor = pClipFeatureLayer.Search(Nothing, False)
@@ -353,32 +365,40 @@ Public Module AOIModule
             tool.in_template_dataset = pClipFClassPath
             tool.clipping_geometry = "ClippingGeometry"  ' clip the raster to the boundary of the aoi_b vector
             GP.AddOutputsToMap = False
+            Dim snapRasterPath As String = BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Surfaces, True) + BA_EnumDescription(MapsFileName.filled_dem_gdb)
+            GP.SetEnvironmentValue("snapRaster", snapRasterPath)
             Dim res As Object = GP.Execute(tool, Nothing)
 
             If res Is Nothing Then
                 'Clip did not complete successfully
                 Return 0
             Else
+                If BA_File_Exists(tempClipName, WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass) Then
+                    BA_Remove_ShapefileFromGDB(BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis, True), tempClipFile)
+                End If
                 'If source and target are both in a File GDB, need to rebuild the attribute
                 'table. Otherwise it will be corrupted if source and target GDB are different
                 If RebuildATT Then
-                    If BA_GetWorkspaceTypeFromPath(InputRaster) = workspaceType.Geodatabase And _
-                        BA_GetWorkspaceTypeFromPath(OutputName) = workspaceType.Geodatabase Then
-                        'Check to be sure the target is a single-band thematic raster; Cannot build an attribute table otherwise
-                        Dim inputFolder As String = "PleaseReturn"
-                        Dim inputFile As String = BA_GetBareName(InputRaster, inputFolder)
-                        pBandCollection = CType(BA_OpenRasterFromGDB(inputFolder, inputFile), IRasterBandCollection)
-                        pRasterBand = pBandCollection.Item(0)
-                        Dim inputATT As Boolean = False
-                        pRasterBand.HasTable(inputATT)
-                        If inputATT = True Then
-                            buildTool.in_raster = OutputName
-                            buildTool.overwrite = False
-                            res = GP.Execute(buildTool, Nothing)
-                            If res IsNot Nothing Then
-                                Return 1
+                        If BA_GetWorkspaceTypeFromPath(InputRaster) = WorkspaceType.Geodatabase And
+                        BA_GetWorkspaceTypeFromPath(OutputName) = WorkspaceType.Geodatabase Then
+                            'Check to be sure the target is a single-band thematic raster; Cannot build an attribute table otherwise
+                            Dim inputFolder As String = "PleaseReturn"
+                            Dim inputFile As String = BA_GetBareName(InputRaster, inputFolder)
+                            pBandCollection = CType(BA_OpenRasterFromGDB(inputFolder, inputFile), IRasterBandCollection)
+                            pRasterBand = pBandCollection.Item(0)
+                            Dim inputATT As Boolean = False
+                            pRasterBand.HasTable(inputATT)
+                            If inputATT = True Then
+                                buildTool.in_raster = OutputName
+                                buildTool.overwrite = False
+                                res = GP.Execute(buildTool, Nothing)
+                                If res IsNot Nothing Then
+                                    Return 1
+                                Else
+                                    Return 0
+                                End If
                             Else
-                                Return 0
+                                Return 1
                             End If
                         Else
                             Return 1
@@ -386,9 +406,6 @@ Public Module AOIModule
                     Else
                         Return 1
                     End If
-                Else
-                    Return 1
-                End If
                 End If
         Catch ex As Exception
             If GP.MessageCount > 0 Then
@@ -446,12 +463,30 @@ Public Module AOIModule
 
         Dim workspaceType As WorkspaceType = BA_GetWorkspaceTypeFromPath(Data_Path)
 
-        If WithBuffer Then 'use bufferred AOI
+        If WithBuffer Then 'use buffered AOI
             ClipShapeFile = BA_EnumDescription(AOIClipFile.BufferedAOIExtentCoverage)
         Else 'use un-bufferred AOI
             ClipShapeFile = BA_EnumDescription(AOIClipFile.AOIExtentCoverage)
         End If
         ClipName = AOIFolder & "\" & BA_EnumDescription(GeodatabaseNames.Aoi) & "\" & ClipShapeFile
+
+        ' Open the feature class here so we can test for > 1 polygon
+        pClipFClass = BA_OpenFeatureClassFromGDB(AOIFolder & "\" & BA_EnumDescription(GeodatabaseNames.Aoi), ClipShapeFile)
+        Dim tempClipFile As String = "tmpClipBuffer"
+        Dim tempClipName As String = BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis, True) + tempClipFile
+        If pClipFClass IsNot Nothing AndAlso Not WithBuffer Then
+            Dim featureCount As Integer = pClipFClass.FeatureCount(Nothing)
+            If featureCount > 1 Then
+                Dim success As BA_ReturnCode = BA_Buffer(ClipName, tempClipName, "0.5 Meters", "ALL")
+                If success = BA_ReturnCode.Success Then
+                    pClipFClass = BA_OpenFeatureClassFromGDB(BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis, True), tempClipFile)
+                    If pClipFClass IsNot Nothing Then
+                        ClipName = tempClipName
+                    End If
+                End If
+            End If
+        End If
+
 
         If Not BA_Workspace_Exists(outputFolder) Then
             Throw New Exception("Output folder " + outputFolder + " does not exist.")
@@ -487,7 +522,6 @@ Public Module AOIModule
             Dim pSFilter As ISpatialFilter
 
             'get the clip geometry
-            pClipFClass = BA_OpenFeatureClassFromGDB(AOIFolder & "\" & BA_EnumDescription(GeodatabaseNames.Aoi), ClipShapeFile)
             pClipFeatureLayer = New FeatureLayer
             pClipFeatureLayer.FeatureClass = pClipFClass
 
@@ -522,9 +556,12 @@ Public Module AOIModule
                 tool.out_feature_class = OutputName 'feature class to be created
                 GP.AddOutputsToMap = False
                 GP.Execute(tool, Nothing)
+                If BA_File_Exists(tempClipName, WorkspaceType.Geodatabase, esriDatasetType.esriDTFeatureClass) Then
+                    BA_Remove_ShapefileFromGDB(BA_GeodatabasePath(AOIFolder, GeodatabaseNames.Analysis), tempClipName)
+                End If
                 Return 1
-            Else
-                Return 0
+                Else
+                    Return 0
             End If
         Catch ex As Exception
             If GP.MessageCount > 0 Then
