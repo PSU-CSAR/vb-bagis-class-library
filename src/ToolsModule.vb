@@ -212,6 +212,10 @@ Public Module ToolsModule
             'BA_ListGPEnvironmentSettings(GP)
             If Not String.IsNullOrEmpty(snapRasterPath) Then
                 GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            ElseIf Not String.IsNullOrEmpty(GP.GetEnvironmentValue("snapRaster")) Then
+                'Had to add this because ArcMap was sometimes caches the snapRaster path inappropriately
+                'This clears it out if none is supplied
+                GP.SetEnvironmentValue("snapRaster", Nothing)
             End If
             pResult = GP.Execute(tool, Nothing)
             Return 1
@@ -243,6 +247,10 @@ Public Module ToolsModule
             GP.AddOutputsToMap = addOutputs
             If Not String.IsNullOrEmpty(snapRasterPath) Then
                 GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            ElseIf Not String.IsNullOrEmpty(GP.GetEnvironmentValue("snapRaster")) Then
+                'Had to add this because ArcMap was sometimes caches the snapRaster path inappropriately
+                'This clears it out if none is supplied
+                GP.SetEnvironmentValue("snapRaster", Nothing)
             End If
             pResult = GP.Execute(tool, Nothing)
             Return BA_ReturnCode.Success
@@ -271,6 +279,10 @@ Public Module ToolsModule
             'BA_ListGPEnvironmentSettings(GP)
             If Not String.IsNullOrEmpty(snapRasterPath) Then
                 GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            ElseIf Not String.IsNullOrEmpty(GP.GetEnvironmentValue("snapRaster")) Then
+                'Had to add this because ArcMap was sometimes caches the snapRaster path inappropriately
+                'This clears it out if none is supplied
+                GP.SetEnvironmentValue("snapRaster", Nothing)
             End If
             pResult = GP.Execute(tool, Nothing)
             Return 1
@@ -1569,6 +1581,10 @@ Public Module ToolsModule
             GP.AddOutputsToMap = addOutputs
             If Not String.IsNullOrEmpty(snapRasterPath) Then
                 GP.SetEnvironmentValue("snapRaster", snapRasterPath)
+            ElseIf Not String.IsNullOrEmpty(GP.GetEnvironmentValue("snapRaster")) Then
+                'Had to add this because ArcMap was sometimes caches the snapRaster path inappropriately
+                'This clears it out if none is supplied
+                GP.SetEnvironmentValue("snapRaster", Nothing)
             End If
             pResult = GP.Execute(tool, Nothing)
             Return BA_ReturnCode.Success
