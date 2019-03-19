@@ -1321,8 +1321,8 @@ Public Module ToolsModule
     'Uses the Geoprocessor Reclassify tool to reclassify a raster from a formatted reclass String
     ' Sample input: 10.99 11.01 41;30.99 31.01 2;40.99 41.01 1;41.99 42.01 1; 
     '                42.99 43.01 1;51.99 52.01 5;70.99 71.01 2;89.99 90.01 4
-    Public Function BA_ReclassifyRasterFromString(ByVal inputFolderPath As String, ByVal reclassField As String, _
-                                                  ByVal reclassString As String, ByVal outputFolderPath As String, _
+    Public Function BA_ReclassifyRasterFromString(ByVal inputFolderPath As String, ByVal reclassField As String,
+                                                  ByVal reclassString As String, ByVal outputFolderPath As String,
                                                   ByVal snapRasterPath As String) As BA_ReturnCode
         Dim tool As Reclassify = New Reclassify
         Try
@@ -1331,6 +1331,28 @@ Public Module ToolsModule
             tool.out_raster = outputFolderPath
             tool.remap = reclassString
             Execute_Geoprocessing(tool, False, snapRasterPath)
+            Return BA_ReturnCode.Success
+        Catch ex As Exception
+            MessageBox.Show("BA_ReclassifyRasterFromString Exception: " + ex.Message)
+            Return BA_ReturnCode.UnknownError
+        Finally
+            ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(tool)
+        End Try
+    End Function
+
+    'Uses the Geoprocessor Reclassify tool to reclassify a raster from a formatted reclass String
+    ' Sample input: 10.99 11.01 41;30.99 31.01 2;40.99 41.01 1;41.99 42.01 1; 
+    '                42.99 43.01 1;51.99 52.01 5;70.99 71.01 2;89.99 90.01 4
+    Public Function BA_ReclassifyRasterFromStringWithMask(ByVal inputFolderPath As String, ByVal reclassField As String,
+                                                  ByVal reclassString As String, ByVal outputFolderPath As String,
+                                                  ByVal snapRasterPath As String, ByVal maskPath As String) As BA_ReturnCode
+        Dim tool As Reclassify = New Reclassify
+        Try
+            tool.in_raster = inputFolderPath
+            tool.reclass_field = reclassField
+            tool.out_raster = outputFolderPath
+            tool.remap = reclassString
+            Execute_GeoprocessingWithMask(tool, maskPath, False, snapRasterPath)
             Return BA_ReturnCode.Success
         Catch ex As Exception
             MessageBox.Show("BA_ReclassifyRasterFromString Exception: " + ex.Message)
