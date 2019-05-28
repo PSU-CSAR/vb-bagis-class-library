@@ -839,7 +839,8 @@ Public Module ExcelModule
     End Function
 
     'calculate zonal stats using aspect zones (16 directions plus flat) and aspect raster
-    Public Function BA_Excel_CreateAspectChart(ByRef pworksheet As Worksheet, ByRef pChartsWorksheet As Worksheet) As Integer
+    Public Function BA_Excel_CreateAspectChart(ByRef pworksheet As Worksheet, ByRef pChartsWorksheet As Worksheet,
+                                               ByVal Position_Top As Double) As Integer
         Dim nrecords As Long
         nrecords = BA_Excel_CountRecords(pworksheet, 2)
 
@@ -862,7 +863,7 @@ Public Module ExcelModule
             'Set Chart Size and Location
             .Parent.Left = BA_ChartSpacing
             .Parent.Width = BA_ChartWidth
-            .Parent.Top = (BA_ChartHeight + BA_ChartSpacing) * 3 + BA_ChartSpacing
+            .Parent.Top = Position_Top
             .Parent.Height = BA_ChartHeight
             'Set Chart Type and Range
             .ChartType = Excel.XlChartType.xlColumnClustered
@@ -996,7 +997,8 @@ Public Module ExcelModule
     End Function
 
     'calculate zonal stats using slope zones and percent slope raster
-    Public Function BA_Excel_CreateSlopeChart(ByRef pworksheet As Worksheet, ByRef pChartsWorksheet As Worksheet) As Integer
+    Public Function BA_Excel_CreateSlopeChart(ByRef pworksheet As Worksheet, ByRef pChartsWorksheet As Worksheet,
+                                              ByVal Position_Top As Double) As Integer
         Dim nrecords As Long = BA_Excel_CountRecords(pworksheet, 2)
 
         '===========================
@@ -1018,7 +1020,7 @@ Public Module ExcelModule
             'Set Position and Location
             .Parent.Left = BA_ChartSpacing
             .Parent.Width = BA_ChartWidth
-            .Parent.Top = (BA_ChartHeight + BA_ChartSpacing) * 2 + BA_ChartSpacing
+            .Parent.Top = Position_Top
             .Parent.Height = BA_ChartHeight
             'Set Chart Type and Value Range
             .ChartType = Excel.XlChartType.xlColumnClustered
@@ -2032,6 +2034,7 @@ Public Module ExcelModule
 
                             pRow = pCursor.NextRow
                             idxRow += 1
+                            Debug.Print(idxRow)
                         Loop
                     End If
                 End If
