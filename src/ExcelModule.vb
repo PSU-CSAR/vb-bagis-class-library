@@ -219,8 +219,8 @@ Public Module ExcelModule
             'Determine PercentArea
             PercentArea = PercentArea + ((pZonalRow.Value(CountIndex) / SumOfCount) * 100)
             'Populate Excel Table
-            Debug.Print(pZonalRow.Value(ValueIndex))
-            Debug.Print(IntervalList(pZonalRow.Value(ValueIndex)).UpperBound)
+            'Debug.Print(pZonalRow.Value(ValueIndex))
+            'Debug.Print(IntervalList(pZonalRow.Value(ValueIndex)).UpperBound)
             pworksheet.Cells(i + 3, 1) = IntervalList(pZonalRow.Value(ValueIndex)).UpperBound * conversionFactor      'Value
             pworksheet.Cells(i + 3, 2) = pZonalRow.Value(CountIndex)                                'Count
             pworksheet.Cells(i + 3, 3) = pZonalRow.Value(AreaIndex)                                 'Area
@@ -2034,7 +2034,6 @@ Public Module ExcelModule
 
                             pRow = pCursor.NextRow
                             idxRow += 1
-                            Debug.Print(idxRow)
                         Loop
                     End If
                 End If
