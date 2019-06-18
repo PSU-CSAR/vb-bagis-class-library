@@ -469,6 +469,12 @@ Public Module ExcelModule
             .MarkerStyle = Excel.XlMarkerStyle.xlMarkerStyleNone
         End With
 
+        'Add description textbox
+        Dim descrPositionTop As Int16 = BA_ChartHeight + 10
+        Dim width As Int16 = BA_ChartWidth
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, BA_ChartSpacing,
+                                           descrPositionTop, BA_ChartWidth, BA_ChartDescrHeight).TextFrame.Characters.Text = "Test Box"
+
         'Clear Chart and Return Value
         myChart = Nothing
         Return 1

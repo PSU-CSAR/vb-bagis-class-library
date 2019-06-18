@@ -185,6 +185,7 @@
     Public Const BA_ChartWidth = 600
     Public Const BA_ChartHeight = 330
     Public Const BA_ChartSpacing = 5
+    Public Const BA_ChartDescrHeight = 20
 
     'Resampling constants
     Public Const BA_Resample_Nearest = "NEAREST"
