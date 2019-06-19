@@ -14,6 +14,15 @@ Public Module ExcelModule
     Public Chart_YMaxScale As Double
     Public Chart_YMinScale As Double
     Public Chart_YMapUnit As Double
+    Public BA_DictChartTextBoxSettings As IDictionary(Of String, ChartTextBoxSettings)
+
+    Public Class ChartTextBoxSettings
+        Public Left As Single
+        Public Top As Single
+        Public Width As Single = BA_ChartWidth
+        Public Height As Single = BA_ChartDescrHeight
+        Public Message As String
+    End Class
 
     'count the number of records in a worksheet based on the values on the first column
     'aspect, slope, snotel, and snow course tables have a beginning_row value of 2
@@ -470,10 +479,9 @@ Public Module ExcelModule
         End With
 
         'Add description textbox
-        Dim descrPositionTop As Int16 = BA_ChartHeight + 10
-        Dim width As Int16 = BA_ChartWidth
-        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, BA_ChartSpacing,
-                                           descrPositionTop, BA_ChartWidth, BA_ChartDescrHeight).TextFrame.Characters.Text = "Test Box"
+        Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAreaElevPdf)
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
 
         'Clear Chart and Return Value
         myChart = Nothing
@@ -729,6 +737,16 @@ Public Module ExcelModule
             .PlotOrder = 1
         End With
 
+        If Is_SNOTEL Then
+            Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAreaElevSnotelPdf)
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
+        Else
+            Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAreaElevScosPdf)
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
+        End If
+
         'Clear Memory and Return Value
         myChart = Nothing
         Return 1
@@ -886,6 +904,10 @@ Public Module ExcelModule
             .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
             .SetElement(MsoChartElementType.msoElementLegendNone)
         End With
+
+        Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAspectPdf)
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
 
         'Clear Memory and Return Value
         myChart = Nothing
@@ -1047,6 +1069,11 @@ Public Module ExcelModule
             .SetElement(MsoChartElementType.msoElementChartTitleAboveChart)
             .SetElement(MsoChartElementType.msoElementLegendNone)
         End With
+
+        Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartSlopePdf)
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
+
         myChart = Nothing
         Return 1
     End Function
@@ -1351,6 +1378,11 @@ Public Module ExcelModule
             .HasAxis(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlSecondary) = True
         End With 'myChart
 
+        'Add descriptive textbox
+        Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAreaElevPrecipPdf)
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
+
         'Clear Chart and Return Value
         myChart = Nothing
         Return 1
@@ -1595,6 +1627,10 @@ Public Module ExcelModule
             .HasAxis(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlPrimary) = True
             .HasAxis(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlSecondary) = True
         End With 'myChart
+
+        Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartAreaElevPrecipSitePdf)
+        pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
         Return 1
     End Function
 
@@ -2076,9 +2112,9 @@ Public Module ExcelModule
 
                 'Set Chart Position
                 .Parent.Left = BA_ChartSpacing
-                .Parent.Width = 800
+                .Parent.Width = BA_LargeChartWidth
                 .Parent.Top = BA_ChartSpacing
-                .Parent.Height = 500
+                .Parent.Height = BA_LargeChartHeight
             End With
 
             'Set series for precip/elevation values
@@ -2173,7 +2209,7 @@ Public Module ExcelModule
                 End With
 
                 'Bottom Axis
-                Dim categoryAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, _
+                Dim categoryAxis As Microsoft.Office.Interop.Excel.Axis = CType(.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                                                                                       Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary), Microsoft.Office.Interop.Excel.Axis)
                 With categoryAxis
                     .HasTitle = True
@@ -2184,6 +2220,10 @@ Public Module ExcelModule
                 End With
             End With
 
+            Dim settings As ChartTextBoxSettings = BA_DictChartTextBoxSettings(BA_ExportChartElevPrecipCorrelPdf)
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, settings.Left,
+                                           settings.Top, settings.Width, settings.Height).TextFrame.Characters.Text = settings.Message
+
             Return BA_ReturnCode.Success
         Catch ex As Exception
             Debug.Print("BA_CreateRepresentPrecipChart Exception: " & ex.Message)
@@ -2191,10 +2231,10 @@ Public Module ExcelModule
         End Try
     End Function
 
-    Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String, _
-                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String, _
-                                          ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet, _
-                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String, _
+    Public Function BA_CreateSnotelPrecipTable(ByVal vectorGdbPath As String, ByVal vectorFileName As String, ByVal precipFieldName As String,
+                                          ByVal elevFieldName As String, ByVal nameFieldName As String, ByVal typeFieldName As String,
+                                          ByVal aspectFieldName As String, ByVal partitionFieldName As String, ByVal pStelElvWorksheet As Worksheet,
+                                          ByVal precipUnit As MeasurementUnit, ByVal partitionColName As String, ByVal zonesFieldName As String,
                                           ByVal demConversionFactor As Double, ByVal lstSelectedSites As IList(Of Site)) As BA_ReturnCode
         Dim pFClass As IFeatureClass = Nothing
         Dim pCursor As IFeatureCursor
