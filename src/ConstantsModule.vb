@@ -272,6 +272,7 @@
     Public Const BA_ExportChartAspectPdf = "chart_aspect.pdf"
     Public Const BA_ExportChartPrecipitationPdf = "chart_precipitation.pdf"
     Public Const BA_ExportChartElevPrecipCorrelPdf = "chart_elev_precip_correlation.pdf"
+    Public Const BA_TitlePagePdf = "title_page.pdf"
 End Module
 
 
