@@ -1489,7 +1489,7 @@ Public Module ExcelModule
 
         'Snow Course Series
         Dim scSeries As Series
-        If aoiHasSnowCourse Then
+        If aoiHasSnowCourse And SnowCourseReturn > 0 Then
             scSeries = myChart.SeriesCollection.NewSeries
             With scSeries
                 .Name = "Snow Course"
@@ -1507,7 +1507,7 @@ Public Module ExcelModule
 
         'SNOTEL Series
         Dim SNOTELSeries As Series
-        If aoiHasSnotel Then
+        If aoiHasSnotel And SNOTELReturn > 0 Then
             SNOTELSeries = myChart.SeriesCollection.NewSeries
             With SNOTELSeries
                 .Name = "SNOTEL"
@@ -1523,9 +1523,9 @@ Public Module ExcelModule
             End With
         End If
 
-        'SNOTEL Series
+        'Pseudo site Series
         Dim PseudoSeries As Series
-        If aoiHasPseudo Then
+        If aoiHasPseudo And PseudoReturn > 0 Then
             PseudoSeries = myChart.SeriesCollection.NewSeries
             With PseudoSeries
                 .Name = "Pseudo Site"
@@ -1969,6 +1969,11 @@ Public Module ExcelModule
             Row_Count = Row_Count + 1
             cell_value = pSourceWS.Cells(Row_Count, col_index)
         Loop
+
+        'No site records were found within the specified range
+        If nrecord < 1 Then
+            Return -1
+        End If
 
         'adjust % area of the first and the last SNOTEL record
         'first record - replace the % area with the difference between the cumulative % area and the cumulative % area of the start elevation
