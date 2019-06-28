@@ -273,6 +273,13 @@
     Public Const BA_ExportChartPrecipitationPdf = "chart_precipitation.pdf"
     Public Const BA_ExportChartElevPrecipCorrelPdf = "chart_elev_precip_correlation.pdf"
     Public Const BA_TitlePagePdf = "title_page.pdf"
+    Public Const BA_ExportChartAreaElevSubrangePdf = "chart_area_elev_subrange.pdf"
+    Public Const BA_ExportChartAreaElevPrecipSubrangePdf = "chart_area_elev_precip_subrange.pdf"
+    Public Const BA_ExportChartAreaElevPrecipSiteSubrangePdf = "chart_area_elev_precip_site_subrange.pdf"
+    Public Const BA_ExportChartAreaElevSnotelSubrangePdf = "chart_area_elev_snotel_subrange.pdf"
+    Public Const BA_ExportChartAreaElevScosSubrangePdf = "chart_area_elev_sc_subrange.pdf"
+
+
 End Module
 
 
