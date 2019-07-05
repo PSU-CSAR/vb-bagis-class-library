@@ -257,6 +257,7 @@
     Public Const BA_SitePseudo = "psite"
 
     'File names for BAGIS .pdf exports
+    Public Const BA_ExportMapPackageFolder = "\maps_publish"
     Public Const BA_ExportMapElevPdf = "map_elevation.pdf"
     Public Const BA_ExportMapElevStelPdf = "map_elevation_snotel.pdf"
     Public Const BA_ExportMapElevScPdf = "map_elevation_sc.pdf"
@@ -278,6 +279,7 @@
     Public Const BA_ExportChartAreaElevPrecipSiteSubrangePdf = "chart_area_elev_precip_site_subrange.pdf"
     Public Const BA_ExportChartAreaElevSnotelSubrangePdf = "chart_area_elev_snotel_subrange.pdf"
     Public Const BA_ExportChartAreaElevScosSubrangePdf = "chart_area_elev_sc_subrange.pdf"
+    Public Const BA_ExportAllMapsChartsPdf As String = "all_maps_charts.pdf"
 
 
 End Module
