@@ -789,14 +789,14 @@ Public Module PublicModule
             pFCursor = pFClass.Search(pQFilter, False)
             pFeature = pFCursor.NextFeature
 
-            If Not pFeature Is Nothing Then
+            If Not pFeature Is Nothing AndAlso FI_Value > -1 Then
                 Return pFeature.Value(FI_Value)
             Else
                 Return 0
             End If
 
         Catch ex As Exception
-            MessageBox.Show("Exception: " + ex.Message)
+            MessageBox.Show("BA_QueryAttributeTable Exception: " + ex.Message)
             Return 0
         Finally
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pFCursor)
