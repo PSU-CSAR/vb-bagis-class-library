@@ -789,14 +789,14 @@ Public Module PublicModule
             pFCursor = pFClass.Search(pQFilter, False)
             pFeature = pFCursor.NextFeature
 
-            If Not pFeature Is Nothing Then
+            If Not pFeature Is Nothing AndAlso FI_Value > -1 Then
                 Return pFeature.Value(FI_Value)
             Else
                 Return 0
             End If
 
         Catch ex As Exception
-            MessageBox.Show("Exception: " + ex.Message)
+            MessageBox.Show("BA_QueryAttributeTable Exception: " + ex.Message)
             Return 0
         Finally
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pFCursor)
@@ -2328,8 +2328,8 @@ Optional ByVal hasPaddingBackSlach As Boolean = False) As String
         End Try
     End Function
 
-    Public Function BA_DatumMatchFiles(ByVal path1 As String, ByVal type1 As esriDatasetType, ByVal path2 As String, ByVal type2 As esriDatasetType, _
-                                       ByVal aoiDatum As String) As Boolean
+    Public Function BA_DatumMatchFiles(ByVal path1 As String, ByVal type1 As esriDatasetType, ByVal path2 As String, ByVal type2 As esriDatasetType,
+                                       ByRef aoiDatum As String) As Boolean
         Dim pGeoDataset As IGeoDataset = Nothing
         Dim pGeoDataset2 As IGeoDataset = Nothing
         Dim spRef1 As ISpatialReference = Nothing

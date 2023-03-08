@@ -6,7 +6,7 @@ Imports System.Windows.Forms
 Imports ESRI.ArcGIS.GeoAnalyst
 Imports ESRI.ArcGIS.DataSourcesRaster
 Imports ESRI.ArcGIS.Geometry
-Imports System.Windows.Forms.ListBox
+Imports ESRI.ArcGIS.Geoprocessing
 Imports ESRI.ArcGIS.DataManagementTools
 Imports ESRI.ArcGIS.ArcMapUI
 Imports System.ComponentModel
@@ -2069,5 +2069,15 @@ Public Module GeodatabaseModule
             ESRI.ArcGIS.ADF.ComReleaser.ReleaseCOMObject(pGeoDS)
         End Try
 
+    End Function
+
+    Public Function BA_ValidateTableName(ByVal folderPath As String, ByVal fileName As String) As String
+        Try
+            Dim gp As IGeoProcessor = New GeoProcessor()
+            Return gp.ValidateTableName(fileName, folderPath)
+        Catch ex As Exception
+            Debug.Print("BA_ValidateTableName Exception: " + ex.Message)
+            Return Nothing
+        End Try
     End Function
 End Module
