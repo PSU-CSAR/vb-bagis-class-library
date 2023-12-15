@@ -790,7 +790,12 @@ Public Module PublicModule
             pFeature = pFCursor.NextFeature
 
             If Not pFeature Is Nothing AndAlso FI_Value > -1 Then
-                Return pFeature.Value(FI_Value)
+                If Not IsDBNull(pFeature.Value(FI_Value)) Then
+                    Return pFeature.Value(FI_Value)
+                Else
+                    Return 0
+                End If
+
             Else
                 Return 0
             End If
